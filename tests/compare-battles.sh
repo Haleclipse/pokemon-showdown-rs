@@ -19,6 +19,8 @@ SEED=${1:-1}
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
 
+source "$SCRIPT_DIR/rust-env.sh"
+
 # Check if a minimized seed file exists
 MINIMIZED_FILE="$PROJECT_DIR/tests/minimized/seed${SEED}.json"
 
@@ -36,8 +38,8 @@ if [ -f "$MINIMIZED_FILE" ]; then
     cp "$MINIMIZED_FILE" /tmp/teams-seed${SEED}-js.json
     cp "$MINIMIZED_FILE" /tmp/teams-seed${SEED}-rust.json
 
-    # Also copy to Docker container
-    docker cp "$MINIMIZED_FILE" pokemon-rust-dev:/tmp/teams-seed${SEED}-rust.json
+    # Also copy to the Rust environment (no-op in local mode)
+    rust_cp_in "$MINIMIZED_FILE" /tmp/teams-seed${SEED}-rust.json
 
     echo "✅ Teams loaded from minimized seed file"
     echo ""
@@ -51,10 +53,10 @@ else
 
     echo ""
     echo "  Rust team generation:"
-    docker exec pokemon-rust-dev bash -c "cd /home/builder/workspace && cargo run --example generate_test_teams_rust $SEED 2>&1" | grep -E '(✓|P1|P2|File)'
+    rust_exec "cargo run --example generate_test_teams_rust $SEED 2>&1" | grep -E '(✓|P1|P2|File)'
 
-    # Copy Rust teams from container to host /tmp
-    docker cp pokemon-rust-dev:/tmp/teams-seed${SEED}-rust.json /tmp/teams-seed${SEED}-rust.json
+    # Copy Rust teams from the Rust environment to host /tmp (no-op in local mode)
+    rust_cp_out /tmp/teams-seed${SEED}-rust.json /tmp/teams-seed${SEED}-rust.json
 
     # Step 2: Compare team generation
     echo ""
@@ -88,7 +90,7 @@ grep '^#[0-9]' /tmp/js-battle-seed${SEED}-full.txt > /tmp/js-battle-seed${SEED}.
 
 echo "  Running Rust battle..."
 # Run Rust battle with debug logging and save both full output and summary lines
-docker exec pokemon-rust-dev bash -c "cd /home/builder/workspace && cargo run --features debug-logging --example test_battle_rust $SEED 2>&1" > /tmp/rust-battle-seed${SEED}-full.txt 2>&1
+rust_exec "cargo run --features debug-logging --example test_battle_rust $SEED 2>&1" > /tmp/rust-battle-seed${SEED}-full.txt 2>&1
 grep '^#[0-9]' /tmp/rust-battle-seed${SEED}-full.txt > /tmp/rust-battle-seed${SEED}.txt
 
 # Step 4: Compare battle outputs

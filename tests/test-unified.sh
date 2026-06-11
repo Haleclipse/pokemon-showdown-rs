@@ -5,9 +5,11 @@
 # Usage: ./tests/test-unified.sh [start] [end]
 #        ./tests/test-unified.sh --failing-seeds
 
+source "$(dirname "${BASH_SOURCE[0]}")/rust-env.sh"
+
 # Build release version first to ensure we're testing the latest code
 echo "Building release version..."
-docker exec pokemon-rust-dev bash -c "cd /home/builder/workspace && cargo build --release --examples 2>&1" | tail -5
+rust_exec "cargo build --release --examples 2>&1" | tail -5
 echo ""
 
 if [ "$1" = "--failing-seeds" ]; then
@@ -32,7 +34,7 @@ if [ "$1" = "--failing-seeds" ]; then
     node tests/test-unified-parallel.js --seeds <(echo $seeds | tr ' ' '\n') > /tmp/js-unified.txt 2>/dev/null &
     JS_PID=$!
 
-    docker exec pokemon-rust-dev bash -c "cd /home/builder/workspace && echo '$seeds' | tr ' ' '\n' | ./target/release/examples/test_unified --seeds /dev/stdin 2>/dev/null" > /tmp/rust-unified.txt &
+    rust_exec "echo '$seeds' | tr ' ' '\n' | ./target/release/examples/test_unified --seeds /dev/stdin 2>/dev/null" > /tmp/rust-unified.txt &
     RUST_PID=$!
 else
     # Range mode
@@ -51,7 +53,7 @@ else
     node tests/test-unified-parallel.js $start_seed $end_seed > /tmp/js-unified.txt 2>/dev/null &
     JS_PID=$!
 
-    docker exec pokemon-rust-dev bash -c "cd /home/builder/workspace && ./target/release/examples/test_unified $start_seed $end_seed 2>/dev/null" > /tmp/rust-unified.txt &
+    rust_exec "./target/release/examples/test_unified $start_seed $end_seed 2>/dev/null" > /tmp/rust-unified.txt &
     RUST_PID=$!
 fi
 

@@ -8,6 +8,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MINIMIZED_DIR="$SCRIPT_DIR/minimized"
 RESULTS_FILE="minimized-seeds-results.txt"
 
+source "$SCRIPT_DIR/rust-env.sh"
+
 # Start fresh output file
 > "$RESULTS_FILE"
 
@@ -29,7 +31,7 @@ log ""
 
 # Build Rust binaries
 log "Building Rust binaries..."
-docker exec pokemon-rust-dev bash -c "cd /home/builder/workspace && cargo build --release --example test_unified --example test_minimized 2>&1" > /dev/null
+rust_exec "cargo build --release --example test_unified --example test_minimized 2>&1" > /dev/null
 
 log "Running unified tests..."
 
@@ -37,7 +39,7 @@ log "Running unified tests..."
 node "$SCRIPT_DIR/test-unified-parallel.js" 1 1000 > /tmp/js-unified.txt 2>/dev/null &
 JS_UNIFIED_PID=$!
 
-docker exec pokemon-rust-dev bash -c "cd /home/builder/workspace && ./target/release/examples/test_unified 1 1000 2>/dev/null" > /tmp/rust-unified.txt &
+rust_exec "./target/release/examples/test_unified 1 1000 2>/dev/null" > /tmp/rust-unified.txt &
 RUST_UNIFIED_PID=$!
 
 wait $JS_UNIFIED_PID
@@ -91,7 +93,7 @@ log "Running $total_minimized minimized seed tests..."
 node "$SCRIPT_DIR/test-minimized.js" > /tmp/js-minimized.txt 2>/dev/null &
 JS_MIN_PID=$!
 
-docker exec pokemon-rust-dev bash -c "cd /home/builder/workspace && ./target/release/examples/test_minimized tests/minimized 2>/dev/null" > /tmp/rust-minimized.txt &
+rust_exec "./target/release/examples/test_minimized tests/minimized 2>/dev/null" > /tmp/rust-minimized.txt &
 RUST_MIN_PID=$!
 
 wait $JS_MIN_PID
@@ -148,7 +150,7 @@ echo "$SEED_LIST" | tr ' ' '\n' | grep -E '^[0-9]+$' > "$SEED_LIST_FILE"
 node "$SCRIPT_DIR/test-unified-parallel.js" --seeds "$SEED_LIST_FILE" > /tmp/js-full.txt 2>/dev/null &
 JS_FULL_PID=$!
 
-docker exec pokemon-rust-dev bash -c "cd /home/builder/workspace && ./target/release/examples/test_unified --seeds tests/seed-list-tmp.txt 2>/dev/null" > /tmp/rust-full.txt &
+rust_exec "./target/release/examples/test_unified --seeds tests/seed-list-tmp.txt 2>/dev/null" > /tmp/rust-full.txt &
 RUST_FULL_PID=$!
 
 wait $JS_FULL_PID
