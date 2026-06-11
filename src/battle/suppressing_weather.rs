@@ -24,14 +24,15 @@ impl Battle {
                 if let Some(pokemon_idx) = side.active[active_idx] {
                     if let Some(pokemon) = side.pokemon.get(pokemon_idx) {
                         // 		if (pokemon && !pokemon.fainted && !pokemon.ignoringAbility() &&
-                        if !pokemon.fainted {
+                        // JS: !pokemon.ignoringAbility() - Neutralizing Gas / Gastro Acid
+                        // disable weather-suppressing abilities like Air Lock
+                        if !pokemon.fainted && !pokemon.ignoring_ability(self) {
                             // Get ability
                             if let Some(ability_data) = self.dex.abilities().get_by_id(&pokemon.ability) {
-                                // 			pokemon.getAbility().suppressWeather && !pokemon.abilityState.ending) {
-                                if ability_data.suppress_weather.unwrap_or(false) {
-                                    // Check if ability is being ignored
-                                    // NOTE: ignoringAbility() and abilityState.ending not fully implemented
-                                    // 				return true;
+                                // JS: pokemon.getAbility().suppressWeather && !pokemon.abilityState.ending
+                                if ability_data.suppress_weather.unwrap_or(false)
+                                    && !pokemon.ability_state.borrow().ending.unwrap_or(false)
+                                {
                                     return true;
                                 }
                             }
