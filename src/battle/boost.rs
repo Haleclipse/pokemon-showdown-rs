@@ -110,6 +110,13 @@ impl Battle {
         is_secondary: bool,
         is_self: bool,
     ) -> bool {
+        // JS: if (this.event) { target ||= this.event.target; source ||= this.event.source; effect ||= this.effect; }
+        // Callers often pass source=None (JS calls this.boost({...}) with no
+        // source); the source then comes from the current event - e.g. a
+        // self-boost during onHit has source == target, which gates handlers
+        // like Clear Amulet's "if (source && target === source) return".
+        let source = source.or_else(|| self.event.as_ref().and_then(|e| e.source));
+
         let (target_side, target_idx) = target;
 
         // Get Pokemon name for logging
