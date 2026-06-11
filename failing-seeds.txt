@@ -1,6 +1,5 @@
 # Current failing seeds (re-verified 2026-06-12 against pokemon-showdown-ts@16c2c7e)
-# 26 remaining: see git history for fixes
-1011991
+# 24 remaining: see git history for fixes
 1030203
 1073460
 1076015
@@ -12,7 +11,6 @@
 1351828
 1486532
 1534550
-1648595
 1723910
 1809450
 1870720

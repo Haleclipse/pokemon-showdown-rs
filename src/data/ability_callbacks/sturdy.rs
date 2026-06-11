@@ -61,7 +61,7 @@ pub fn on_try_hit(battle: &mut Battle, target_pos: (usize, usize), _source_pos: 
 ///     }
 /// }
 pub fn on_damage(battle: &mut Battle, damage: i32, target_pos: (usize, usize), _source_pos: Option<(usize, usize)>, effect: Option<&Effect>) -> EventResult {
-    let effect_id = effect.map(|e| e.id.as_str());
+    let _effect_id = effect.map(|e| e.id.as_str());
     use crate::battle::Arg;
 
     // if (target.hp === target.maxhp && damage >= target.hp && effect && effect.effectType === 'Move')
@@ -74,12 +74,13 @@ pub fn on_damage(battle: &mut Battle, damage: i32, target_pos: (usize, usize), _
         let hp = target.hp;
         let would_faint = damage >= hp;
 
-        // Check if effect is a move
-        let is_move = if let Some(eff_id) = effect_id {
-            battle.dex.moves().get(eff_id).is_some()
-        } else {
-            false
-        };
+        // JS: effect.effectType === 'Move'
+        // Use the effect's own type, not a dex lookup: confusion self-hit
+        // passes a synthetic effect {id:'confused', effectType:'Move'} that
+        // has no dex entry but must still trigger Sturdy.
+        let is_move = effect
+            .map(|e| e.effect_type == crate::battle::EffectType::Move)
+            .unwrap_or(false);
 
         (at_full, hp, would_faint, is_move)
     };
