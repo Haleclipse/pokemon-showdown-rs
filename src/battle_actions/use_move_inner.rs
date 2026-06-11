@@ -694,6 +694,12 @@ pub fn use_move_inner(
     // This happens when there's no valid adjacent ally for Dragon Darts
     if get_move_targets_result.should_clear_smart_target {
         active_move.smart_target = Some(false);
+        // JS: move is a shared reference, so clearing smartTarget is visible to all
+        // later readers (e.g. Berserk's onAfterMoveSecondary reads move.smartTarget).
+        // In Rust, battle.active_move was cloned earlier, so sync it explicitly.
+        if let Some(ref battle_active_move) = battle.active_move {
+            battle_active_move.borrow_mut().smart_target = Some(false);
+        }
     }
 
     // if (targets.length) {

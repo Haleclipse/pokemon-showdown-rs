@@ -443,6 +443,10 @@ pub fn try_spread_move_hit(
         if at_least_one_failure {
             if active_move.smart_target == Some(true) {
                 active_move.smart_target = Some(false);
+                // Sync battle.active_move (JS shares the move object by reference)
+                if let Some(ref battle_active_move) = battle.active_move {
+                    battle_active_move.borrow_mut().smart_target = Some(false);
+                }
             }
         }
 

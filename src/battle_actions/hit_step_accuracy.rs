@@ -344,6 +344,10 @@ pub fn hit_step_accuracy(
             if was_smart {
                 // If smart_target was true, set it to false and don't show miss message
                 active_move.smart_target = Some(false);
+                // Sync battle.active_move (JS shares the move object by reference)
+                if let Some(ref battle_active_move) = battle.active_move {
+                    battle_active_move.borrow_mut().smart_target = Some(false);
+                }
             }
             let spread_hit = active_move.spread_hit;
 

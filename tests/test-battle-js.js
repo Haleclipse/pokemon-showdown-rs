@@ -150,6 +150,18 @@ if (process.env.PP_TRACE) {
     };
 }
 
+// Optional gotAttacked trace: GOTATTACKED_TRACE=1 logs gotAttacked args and berserk-relevant move state
+if (process.env.GOTATTACKED_TRACE) {
+    const PokemonClass = require('./../../pokemon-showdown-ts/dist/sim/pokemon').Pokemon;
+    const origGotAttacked = PokemonClass.prototype.gotAttacked;
+    PokemonClass.prototype.gotAttacked = function(move, damage, source) {
+        const r = origGotAttacked.call(this, move, damage, source);
+        const am = battle.activeMove;
+        console.error(`[GOTATTACKED_JS] turn=${battle.turn}, who=${this.name}, hp=${this.hp}/${this.maxhp}, move=${typeof move === 'string' ? move : move.id}, damage=${damage}, activeMove.smartTarget=${am?.smartTarget}, activeMove.totalDamage=${am?.totalDamage}`);
+        return r;
+    };
+}
+
 // Optional weather trace: WEATHER_TRACE=1 logs every field.setWeather call
 if (process.env.WEATHER_TRACE) {
     const originalSetWeather = battle.field.setWeather.bind(battle.field);
