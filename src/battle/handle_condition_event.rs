@@ -102,12 +102,10 @@ impl Battle {
                 // onSourceAccuracy is called on volatiles of the SOURCE Pokemon
                 // Lock-On/Mind Reader return true to bypass accuracy checks
                 //
-                // CRITICAL: If relay_var is Boolean(true), a previous handler (like No Guard)
-                // has already determined the move will hit. Return Boolean(true) immediately.
+                // NOTE: JS runs the callback even when accuracy is already boolean true
+                // (e.g. No Guard) - Micle Berry still consumes its volatile in that case,
+                // it just skips the numeric chainModify. accuracy=0 represents boolean true.
                 let relay_var = self.event.as_ref().and_then(|e| e.relay_var.clone());
-                if matches!(relay_var, Some(EventResult::Boolean(true))) {
-                    return EventResult::Boolean(true);
-                }
                 let accuracy = match &relay_var {
                     Some(EventResult::Number(n)) => *n,
                     _ => 0

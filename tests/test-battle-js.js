@@ -79,6 +79,11 @@ battle.speedSort = function(list, comparator) {
         const ids = list.map(h => `${h.effect.id}(spd=${h.speed},pri=${h.priority},sub=${h.subOrder},eo=${h.effectOrder})`);
         console.error(`[SORT2_JS] turn=${battle.turn}, ids=[${ids.join(', ')}]`);
     }
+    // Optional: HANDLER_SORT_TRACE=1 logs every speedSort over event handlers (entries with .effect)
+    if (process.env.HANDLER_SORT_TRACE && list.length >= 2 && list[0]?.effect) {
+        const items = list.map(h => `${h.effect?.id}(order=${h.order},prio=${h.priority},spd=${h.speed},sub=${h.subOrder},effOrd=${h.effectOrder})`);
+        console.error(`[HANDLER_SORT_JS] turn=${battle.turn}, PRNG=${totalPrngCalls}, handlers=[${items.join(', ')}]`);
+    }
     // Log all speedSort calls with 3 handlers to debug the divergence
     if (list.length === 3) {
         console.error(`[SPEED_SORT_JS_3] turn=${battle.turn}, list.length=${list.length}, BEFORE sort, PRNG=${totalPrngCalls}`);
