@@ -57,7 +57,7 @@ pub fn on_hit(
     // }
     let move_id = match last_move_id {
         Some(id) => id,
-        None => return EventResult::Boolean(false),
+None => return EventResult::Boolean(false),
     };
 
     let move_data = match battle.dex.moves().get_by_id(&move_id) {

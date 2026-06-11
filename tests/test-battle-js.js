@@ -138,6 +138,18 @@ if (process.env.ABILITY_TRACE) {
     };
 }
 
+// Optional PP trace: PP_TRACE=1 logs deductPP and lastMove
+if (process.env.PP_TRACE) {
+    const PokemonClass = require('./../../pokemon-showdown-ts/dist/sim/pokemon').Pokemon;
+    const origDeduct = PokemonClass.prototype.deductPP;
+    PokemonClass.prototype.deductPP = function(move, amount, target) {
+        const r = origDeduct.call(this, move, amount, target);
+        const mid = typeof move === 'string' ? move : move.id;
+        console.error(`[PP_TRACE] turn=${battle.turn}, who=${this.name}, deductPP(${mid}, ${amount}) = ${r}, lastMove=${this.lastMove?.id}, slots=[${this.moveSlots.map(m => m.id + ':' + m.pp).join(',')}]`);
+        return r;
+    };
+}
+
 // Optional weather trace: WEATHER_TRACE=1 logs every field.setWeather call
 if (process.env.WEATHER_TRACE) {
     const originalSetWeather = battle.field.setWeather.bind(battle.field);
