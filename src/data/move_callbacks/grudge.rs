@@ -147,10 +147,19 @@ pub mod condition {
                         };
                         if i < source_pokemon.move_slots.len() {
                             source_pokemon.move_slots[i].pp = 0;
-                            // Also update baseMoveSlots - in JavaScript these share the same MoveSlot objects
-                            // because slice() creates a shallow copy. In Rust we clone, so we need to update both.
-                            if i < source_pokemon.base_move_slots.len() {
-                                source_pokemon.base_move_slots[i].pp = 0;
+                            // JS shares MoveSlot objects between moveSlots and
+                            // baseMoveSlots (slice() is shallow) - but a slot
+                            // replaced by Mimic/Sketch is a NEW object with no
+                            // base counterpart. Sync by id, not index, so
+                            // zeroing a copied move never hits the base slot
+                            // that still holds the original move.
+                            let slot_id = source_pokemon.move_slots[i].id.clone();
+                            if let Some(base_slot) = source_pokemon
+                                .base_move_slots
+                                .iter_mut()
+                                .find(|s| s.id == slot_id)
+                            {
+                                base_slot.pp = 0;
                             }
                         }
                     }
