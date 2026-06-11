@@ -21,8 +21,8 @@ pub fn on_modify_atk(battle: &mut Battle, pokemon_pos: (usize, usize)) -> EventR
         };
 
         battle.dex.species().get(pokemon.base_species.as_str())
-            .and_then(|species| species.base_species.as_ref())
-            .map(|base_species| base_species == "Pikachu")
+            // JS: species.baseSpecies defaults to the species name itself
+            .map(|species| species.base_species.as_deref().unwrap_or(&species.name) == "Pikachu")
             .unwrap_or(false)
     };
 
@@ -48,8 +48,8 @@ pub fn on_modify_sp_a(battle: &mut Battle, pokemon_pos: (usize, usize)) -> Event
         };
 
         battle.dex.species().get(pokemon.base_species.as_str())
-            .and_then(|species| species.base_species.as_ref())
-            .map(|base_species| base_species == "Pikachu")
+            // JS: species.baseSpecies defaults to the species name itself
+            .map(|species| species.base_species.as_deref().unwrap_or(&species.name) == "Pikachu")
             .unwrap_or(false)
     };
 
