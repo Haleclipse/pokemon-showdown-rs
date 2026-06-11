@@ -197,11 +197,31 @@ impl Battle {
         };
 
         // JS: boost = target.getCappedBoost(boost);
-        // Clamp boosts to [-6, 6] range - done per-stat below
+        // Cap each entry so current + delta stays within [-6, 6]. Entries may
+        // become 0 but stay present: a capped 0 is distinct from a key later
+        // deleted by a TryBoost handler (BoostsTable::DELETED).
+        let boost_after_change = {
+            let mut t = boost_after_change;
+            if let Some(pokemon) = self.sides.get(target_side).and_then(|s| s.pokemon.get(target_idx)) {
+                let cap = |delta: i8, current: i8| -> i8 {
+                    let total = (current as i16 + delta as i16).clamp(-6, 6);
+                    (total - current as i16) as i8
+                };
+                let cur = &pokemon.boosts;
+                if t.atk != crate::dex_data::BoostsTable::DELETED { t.atk = cap(t.atk, cur.atk); }
+                if t.def != crate::dex_data::BoostsTable::DELETED { t.def = cap(t.def, cur.def); }
+                if t.spa != crate::dex_data::BoostsTable::DELETED { t.spa = cap(t.spa, cur.spa); }
+                if t.spd != crate::dex_data::BoostsTable::DELETED { t.spd = cap(t.spd, cur.spd); }
+                if t.spe != crate::dex_data::BoostsTable::DELETED { t.spe = cap(t.spe, cur.spe); }
+                if t.accuracy != crate::dex_data::BoostsTable::DELETED { t.accuracy = cap(t.accuracy, cur.accuracy); }
+                if t.evasion != crate::dex_data::BoostsTable::DELETED { t.evasion = cap(t.evasion, cur.evasion); }
+            }
+            t
+        };
 
         // JS: boost = this.runEvent('TryBoost', target, source, effect, { ...boost });
         // This event can prevent boosts from being applied (e.g., Clear Body, Keen Eye abilities)
-        // The boost table is passed to handlers which can modify it (e.g., set accuracy to 0)
+        // Handlers delete blocked entries by setting them to BoostsTable::DELETED
         let try_boost_result = self.run_event("TryBoost", Some(crate::event::EventTarget::Pokemon(target)), source, effect_obj.as_ref(), EventResult::Boost(boost_after_change.clone()), false, false);
 
         // Get the modified boost table from the event result
@@ -214,21 +234,20 @@ impl Battle {
         // Convert modified boost table back to a vector of (stat, amount) pairs
         // Only include non-zero boosts (abilities like Keen Eye set unwanted boosts to 0)
         let mut modified_boosts: Vec<(&str, i8)> = Vec::new();
-        if modified_boost_table.atk != 0 { modified_boosts.push(("atk", modified_boost_table.atk)); }
-        if modified_boost_table.def != 0 { modified_boosts.push(("def", modified_boost_table.def)); }
-        if modified_boost_table.spa != 0 { modified_boosts.push(("spa", modified_boost_table.spa)); }
-        if modified_boost_table.spd != 0 { modified_boosts.push(("spd", modified_boost_table.spd)); }
-        if modified_boost_table.spe != 0 { modified_boosts.push(("spe", modified_boost_table.spe)); }
-        if modified_boost_table.accuracy != 0 { modified_boosts.push(("accuracy", modified_boost_table.accuracy)); }
-        if modified_boost_table.evasion != 0 { modified_boosts.push(("evasion", modified_boost_table.evasion)); }
+        {
+            const DEL: i8 = crate::dex_data::BoostsTable::DELETED;
+            let t = &modified_boost_table;
+            if t.atk != DEL && t.atk != 0 { modified_boosts.push(("atk", t.atk)); }
+            if t.def != DEL && t.def != 0 { modified_boosts.push(("def", t.def)); }
+            if t.spa != DEL && t.spa != 0 { modified_boosts.push(("spa", t.spa)); }
+            if t.spd != DEL && t.spd != 0 { modified_boosts.push(("spd", t.spd)); }
+            if t.spe != DEL && t.spe != 0 { modified_boosts.push(("spe", t.spe)); }
+            if t.accuracy != DEL && t.accuracy != 0 { modified_boosts.push(("accuracy", t.accuracy)); }
+            if t.evasion != DEL && t.evasion != 0 { modified_boosts.push(("evasion", t.evasion)); }
+        }
 
         let mut success = false;
-        let mut stats_raised = false;
-        let mut stats_lowered = false;
         let mut boosted = is_secondary; // JS: let boosted = isSecondary;
-        // Track the actual applied boosts (after capping) for AfterBoost event
-        // JavaScript: boost = target.getCappedBoost(boost); then passes capped boost to AfterBoost
-        let mut actual_boost_table = crate::dex_data::BoostsTable::new();
 
         // Get Pokemon name for logging
         let pokemon_name = if let Some(side) = self.sides.get(target_side) {
@@ -262,27 +281,9 @@ impl Battle {
                     *current = (*current + amount).clamp(-6, 6);
                     let actual = *current - old;
 
-                    // Track the actual applied boost (after capping) for AfterBoost event
-                    // JavaScript: boost = target.getCappedBoost(boost); modifies boost in place
-                    match *stat {
-                        "atk" => actual_boost_table.atk = actual,
-                        "def" => actual_boost_table.def = actual,
-                        "spa" => actual_boost_table.spa = actual,
-                        "spd" => actual_boost_table.spd = actual,
-                        "spe" => actual_boost_table.spe = actual,
-                        "accuracy" => actual_boost_table.accuracy = actual,
-                        "evasion" => actual_boost_table.evasion = actual,
-                        _ => {}
-                    }
-
                     // JS: if (boostBy) { success = true; ... }
                     if actual != 0 {
                         success = true;
-                        if actual > 0 {
-                            stats_raised = true;
-                        } else {
-                            stats_lowered = true;
-                        }
 
                         let mut msg = if actual > 0 { "-boost" } else { "-unboost" };
                         let boost_by = if actual < 0 || *current == -6 {
@@ -432,19 +433,26 @@ impl Battle {
         }
 
         // JS: this.runEvent('AfterBoost', target, source, effect, boost);
-        // Pass the actual applied boosts (after capping), not the original intended boosts
-        // JavaScript: boost = target.getCappedBoost(boost); then passes capped boost to AfterBoost
-        self.run_event("AfterBoost", Some(crate::event::EventTarget::Pokemon(target)), source, effect_obj.as_ref(), EventResult::Boost(actual_boost_table), false, false);
+        // JS passes the post-TryBoost table: deleted keys absent (DELETED
+        // sentinel here), capped keys present with their capped value (may
+        // be 0). Consumers like Adrenaline Orb rely on that distinction.
+        self.run_event("AfterBoost", Some(crate::event::EventTarget::Pokemon(target)), source, effect_obj.as_ref(), EventResult::Boost(modified_boost_table.clone()), false, false);
 
         // JS: if (Object.values(boost).some(x => x > 0)) target.statsRaisedThisTurn = true;
         // JS: if (Object.values(boost).some(x => x < 0)) target.statsLoweredThisTurn = true;
+        // Computed from the same table as JS; DELETED entries are absent keys.
         if success {
+            const DEL: i8 = crate::dex_data::BoostsTable::DELETED;
+            let t = &modified_boost_table;
+            let vals = [t.atk, t.def, t.spa, t.spd, t.spe, t.accuracy, t.evasion];
+            let raised = vals.iter().any(|&v| v != DEL && v > 0);
+            let lowered = vals.iter().any(|&v| v != DEL && v < 0);
             if let Some(side) = self.sides.get_mut(target_side) {
                 if let Some(pokemon) = side.pokemon.get_mut(target_idx) {
-                    if stats_raised {
+                    if raised {
                         pokemon.stats_raised_this_turn = true;
                     }
-                    if stats_lowered {
+                    if lowered {
                         pokemon.stats_lowered_this_turn = true;
                     }
                 }

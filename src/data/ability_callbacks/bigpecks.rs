@@ -35,9 +35,9 @@ pub fn on_try_boost(
     };
 
     // if (boost.def && boost.def < 0) {
-    if boost.def < 0 {
+    if boost.def != crate::dex_data::BoostsTable::DELETED && boost.def < 0 {
         // delete boost.def;
-        boost.def = 0;
+        boost.def = crate::dex_data::BoostsTable::DELETED;
 
         // if (!(effect as ActiveMove).secondaries && effect.id !== 'octolock') {
         let has_secondaries = battle.active_move.as_ref()

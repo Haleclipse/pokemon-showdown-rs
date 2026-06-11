@@ -69,6 +69,14 @@ pub struct BoostsTable {
 }
 
 impl BoostsTable {
+    /// Sentinel marking a stat as deleted from a boost table flowing through
+    /// the boost pipeline (JS `delete boost[stat]` on a SparseBoostsTable).
+    /// JS distinguishes a deleted key (undefined) from a present 0 (a boost
+    /// capped at +-6); the dense Rust table encodes "deleted" with this
+    /// sentinel. Real boost deltas are within [-12, 12], so it is unreachable
+    /// otherwise. Pipeline code must skip entries equal to DELETED.
+    pub const DELETED: i8 = i8::MIN;
+
     pub fn new() -> Self {
         Self::default()
     }

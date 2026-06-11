@@ -42,7 +42,9 @@ pub fn on_after_boost(
     use crate::dex_data::BoostID;
     let mut has_negative_boost = false;
     for boost_id in BoostID::all() {
-        if boost.get(*boost_id) < 0 {
+        let v = boost.get(*boost_id);
+        // DELETED entries are absent keys in JS and are not iterated
+        if v != crate::dex_data::BoostsTable::DELETED && v < 0 {
             has_negative_boost = true;
             break;
         }

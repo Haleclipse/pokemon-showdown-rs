@@ -35,9 +35,9 @@ pub fn on_try_boost(
     };
 
     // if (boost.accuracy && boost.accuracy < 0) {
-    if boost.accuracy < 0 {
+    if boost.accuracy != crate::dex_data::BoostsTable::DELETED && boost.accuracy < 0 {
         // delete boost.accuracy;
-        boost.accuracy = 0;
+        boost.accuracy = crate::dex_data::BoostsTable::DELETED;
 
         // if (!(effect as ActiveMove).secondaries) {
         let has_secondaries = battle.active_move.as_ref()

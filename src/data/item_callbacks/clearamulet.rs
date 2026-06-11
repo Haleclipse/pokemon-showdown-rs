@@ -45,32 +45,32 @@ pub fn on_try_boost(
     //         showMsg = true;
     //     }
     // }
-    if boost.atk < 0 {
-        boost.atk = 0;
+    if boost.atk != crate::dex_data::BoostsTable::DELETED && boost.atk < 0 {
+        boost.atk = crate::dex_data::BoostsTable::DELETED; // JS: delete boost[i]
         show_msg = true;
     }
-    if boost.def < 0 {
-        boost.def = 0;
+    if boost.def != crate::dex_data::BoostsTable::DELETED && boost.def < 0 {
+        boost.def = crate::dex_data::BoostsTable::DELETED; // JS: delete boost[i]
         show_msg = true;
     }
-    if boost.spa < 0 {
-        boost.spa = 0;
+    if boost.spa != crate::dex_data::BoostsTable::DELETED && boost.spa < 0 {
+        boost.spa = crate::dex_data::BoostsTable::DELETED; // JS: delete boost[i]
         show_msg = true;
     }
-    if boost.spd < 0 {
-        boost.spd = 0;
+    if boost.spd != crate::dex_data::BoostsTable::DELETED && boost.spd < 0 {
+        boost.spd = crate::dex_data::BoostsTable::DELETED; // JS: delete boost[i]
         show_msg = true;
     }
-    if boost.spe < 0 {
-        boost.spe = 0;
+    if boost.spe != crate::dex_data::BoostsTable::DELETED && boost.spe < 0 {
+        boost.spe = crate::dex_data::BoostsTable::DELETED; // JS: delete boost[i]
         show_msg = true;
     }
-    if boost.accuracy < 0 {
-        boost.accuracy = 0;
+    if boost.accuracy != crate::dex_data::BoostsTable::DELETED && boost.accuracy < 0 {
+        boost.accuracy = crate::dex_data::BoostsTable::DELETED; // JS: delete boost[i]
         show_msg = true;
     }
-    if boost.evasion < 0 {
-        boost.evasion = 0;
+    if boost.evasion != crate::dex_data::BoostsTable::DELETED && boost.evasion < 0 {
+        boost.evasion = crate::dex_data::BoostsTable::DELETED; // JS: delete boost[i]
         show_msg = true;
     }
 

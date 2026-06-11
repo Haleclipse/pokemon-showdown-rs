@@ -58,9 +58,9 @@ pub fn on_try_boost(
     };
 
     // if (boost.atk) {
-    if boost.atk != 0 {
+    if boost.atk != crate::dex_data::BoostsTable::DELETED && boost.atk != 0 {
         // delete boost.atk;
-        boost.atk = 0;
+        boost.atk = crate::dex_data::BoostsTable::DELETED;
 
         // this.boost({ atk: 1 }, target, target, null, false, true);
         battle.boost(

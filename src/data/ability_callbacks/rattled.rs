@@ -59,7 +59,8 @@ pub fn on_after_boost(battle: &mut Battle, boost: &crate::dex_data::BoostsTable,
     }
 
     // Check if atk boost exists (boost.atk is present)
-    if boost.atk != 0 {
+    // A DELETED entry is an absent key in JS - falsy, so skip it
+    if boost.atk != crate::dex_data::BoostsTable::DELETED && boost.atk != 0 {
         // this.boost({ spe: 1 });
         battle.boost(
             &[("spe", 1)],

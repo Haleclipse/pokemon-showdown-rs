@@ -60,7 +60,7 @@ pub fn on_try_boost(
 
     // Helper to bounce a single boost
     let mut bounce_boost = |boost_val: &mut i8, boost_id: crate::dex_data::BoostID| {
-        if *boost_val < 0 {
+        if *boost_val != crate::dex_data::BoostsTable::DELETED && *boost_val < 0 {
             // Check if target boost is already at minimum
             let target_boost = {
                 let target = match battle.pokemon_at(target_pos.0, target_pos.1) {
@@ -109,7 +109,7 @@ pub fn on_try_boost(
 
                 // Boost the source with the negative value
                 let boost_amount = *boost_val;
-                *boost_val = 0; // delete boost[b];
+                *boost_val = crate::dex_data::BoostsTable::DELETED; // delete boost[b];
 
                 // Convert BoostID to string for battle.boost call
                 let boost_name = match boost_id {
