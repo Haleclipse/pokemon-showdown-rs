@@ -145,7 +145,7 @@ if (process.env.PP_TRACE) {
     PokemonClass.prototype.deductPP = function(move, amount, target) {
         const r = origDeduct.call(this, move, amount, target);
         const mid = typeof move === 'string' ? move : move.id;
-        console.error(`[PP_TRACE] turn=${battle.turn}, who=${this.name}, deductPP(${mid}, ${amount}) = ${r}, lastMove=${this.lastMove?.id}, slots=[${this.moveSlots.map(m => m.id + ':' + m.pp).join(',')}]`);
+        console.error(`[PP_TRACE] turn=${battle.turn}, who=${this.name}, deductPP(${mid}, ${amount}) = ${r}, lastMove=${this.lastMove?.id}, slots=[${this.moveSlots.map(m => m.id + ':' + m.pp).join(',')}], baseSlots=[${this.baseMoveSlots.map(m => m.id + ':' + m.pp).join(',')}], shared=[${this.moveSlots.map((m, i) => m === this.baseMoveSlots[i]).join(',')}]`);
         return r;
     };
 }
@@ -489,6 +489,12 @@ for (let i = 1; i <= 100; i++) {
     console.error(`>>> Turn ${battle.turn} completed. PRNG: ${prngBefore}->${prngAfter} (+${prngAfter - prngBefore} calls)`);
 
     if (battle.ended || i >= 100) {
+        // Optional protocol dump: PROTOCOL_LOG=1 dumps the full battle protocol log
+        if (process.env.PROTOCOL_LOG) {
+            console.error('===== PROTOCOL LOG =====');
+            for (const line of battle.log) console.error(line);
+            console.error('===== END PROTOCOL LOG =====');
+        }
         console.error('');
         console.error('========================================');
         console.error(`Battle ended: ${battle.ended}`);

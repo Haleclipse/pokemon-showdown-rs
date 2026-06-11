@@ -145,8 +145,19 @@ pub mod condition {
                     Some(p) => p,
                     None => return EventResult::Continue,
                 };
-                for move_slot in &mut target_pokemon.move_slots {
-                    move_slot.pp = move_slot.maxpp;
+                for i in 0..target_pokemon.move_slots.len() {
+                    target_pokemon.move_slots[i].pp = target_pokemon.move_slots[i].maxpp;
+                    // JS moveSlots entries are shared object references with
+                    // baseMoveSlots, so restoring pp is visible in the base
+                    // slots too (and survives switching out). Sync by id.
+                    let slot_id = target_pokemon.move_slots[i].id.clone();
+                    if let Some(base_slot) = target_pokemon
+                        .base_move_slots
+                        .iter_mut()
+                        .find(|s| s.id == slot_id)
+                    {
+                        base_slot.pp = base_slot.maxpp;
+                    }
                 }
             }
 
