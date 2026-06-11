@@ -401,9 +401,18 @@ pub fn run_move(
         None
     };
 
-    // AfterMove events - use effective_move_id since the move may have been changed by OverrideAction
+    // JS: if (this.battle.activeMove) move = this.battle.activeMove;
+    // When the move called another move (Metronome -> Sparkling Aria, etc.),
+    // battle.activeMove is the CALLED move, and the AfterMove events fire for
+    // it - e.g. Sparkling Aria's onAfterMove burn cure.
+    let after_move_id = battle
+        .active_move
+        .as_ref()
+        .map(|m| m.borrow().id.clone())
+        .unwrap_or(effective_move_id.clone());
+
     // this.battle.singleEvent('AfterMove', move, null, pokemon, target, move);
-    let move_effect = battle.make_move_effect(&effective_move_id);
+    let move_effect = battle.make_move_effect(&after_move_id);
     battle.single_event("AfterMove", &move_effect, None, Some(pokemon_pos), target_pos, Some(&move_effect), None);
 
     // this.battle.runEvent('AfterMove', pokemon, target, move);

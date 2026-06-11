@@ -458,8 +458,14 @@ pub fn try_spread_move_hit(
     // Sync hit_targets to battle.active_move so ability callbacks like Magician can see it
     // We only update hit_targets, not the entire active_move, to avoid the nested move issue
     // described below.
+    //
+    // When a nested move was called (Metronome -> Sparkling Aria), battle.active_move
+    // is the CALLED move and already carries its own hit_targets; the outer move must
+    // not overwrite them (JS writes to its own local move object, not battle.activeMove).
     if let Some(ref battle_active_move) = battle.active_move {
-        battle_active_move.borrow_mut().hit_targets = target_list.clone();
+        if battle_active_move.borrow().id == active_move.id {
+            battle_active_move.borrow_mut().hit_targets = target_list.clone();
+        }
     }
 
     // NOTE: Do NOT restore battle.active_move here!
