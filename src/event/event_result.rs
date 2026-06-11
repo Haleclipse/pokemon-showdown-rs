@@ -115,6 +115,9 @@ impl EventResult {
             EventResult::Number(n) => *n != 0,
             EventResult::Null => false,
             EventResult::Stop => false,
+            // JS: the empty string is falsy (e.g. a SetAbility relayVar of
+            // source.ability when the source has no ability)
+            EventResult::String(s) => !s.is_empty(),
             _ => true,
         }
     }

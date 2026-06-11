@@ -126,6 +126,18 @@ if (process.env.HANDLER_TRACE) {
     };
 }
 
+// Optional ability trace: ABILITY_TRACE=1 logs every pokemon.setAbility
+if (process.env.ABILITY_TRACE) {
+    const PokemonClass = require('./../../pokemon-showdown-ts/dist/sim/pokemon').Pokemon;
+    const origSetAbility = PokemonClass.prototype.setAbility;
+    PokemonClass.prototype.setAbility = function(ability, source, sourceEffect, isFromFormeChange, isTransform) {
+        const before = this.ability;
+        const r = origSetAbility.call(this, ability, source, sourceEffect, isFromFormeChange, isTransform);
+        console.error(`[SETABILITY_JS] turn=${battle.turn}, who=${this.name}, ${before} -> ${this.ability}, requested=${typeof ability === 'string' ? ability : ability.id}, result=${JSON.stringify(r)}`);
+        return r;
+    };
+}
+
 // Optional weather trace: WEATHER_TRACE=1 logs every field.setWeather call
 if (process.env.WEATHER_TRACE) {
     const originalSetWeather = battle.field.setWeather.bind(battle.field);

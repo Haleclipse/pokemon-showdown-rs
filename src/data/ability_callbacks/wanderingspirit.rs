@@ -65,16 +65,21 @@ pub fn on_damaging_hit(battle: &mut Battle, _damage: i32, target_pos: Option<(us
 
     // const targetCanBeSet = this.runEvent('SetAbility', target, source, this.effect, source.ability);
     // if (!targetCanBeSet) return targetCanBeSet;
+    // JS: const targetCanBeSet = this.runEvent('SetAbility', target, source, this.effect, source.ability);
+    // The relayVar is the SOURCE'S ability id string. With no handlers the
+    // runEvent returns it unchanged - and an empty ability ('' on e.g.
+    // MissingNo.) is falsy, so the whole swap aborts in JS.
     let target_can_be_set = battle.run_event(
         "SetAbility",
         Some(crate::event::EventTarget::Pokemon(target_pos)),
         Some(source_pos),
         None,
-        EventResult::Continue,
+        EventResult::String(source_ability_id.as_str().to_string()),
         false,
         false,
     );
-    if matches!(target_can_be_set, EventResult::Number(0)) || matches!(target_can_be_set, EventResult::Null) {
+    // JS: if (!targetCanBeSet) return targetCanBeSet;
+    if !target_can_be_set.is_truthy() {
         return EventResult::Continue;
     }
 
