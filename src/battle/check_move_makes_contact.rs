@@ -40,7 +40,10 @@ impl Battle {
         if let Some(attacker_side) = self.sides.get(attacker_side_idx) {
             if let Some(attacker_pokemon) = attacker_side.pokemon.get(attacker_poke_idx) {
                 // Protective Pads prevents contact
-                if attacker_pokemon.item.as_str() == "protectivepads" {
+                // JS: attacker.hasItem('protectivepads') - hasItem includes the
+                // ignoringItem() check, so an Embargoed/Klutz/Magic Room holder
+                // does NOT get the pads' protection.
+                if attacker_pokemon.has_item(self, &["protectivepads"]) {
                     // JS: if (announcePads)
                     if announce_pads {
                         // Get effect name for first message
