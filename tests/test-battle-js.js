@@ -58,6 +58,11 @@ battle.prng.rng.next = function() {
 const originalSpeedSort = battle.speedSort.bind(battle);
 battle.speedSort = function(list, comparator) {
     const startPrng = totalPrngCalls;
+    // Log 2-item Pokemon sorts (eachEvent) to debug speed-tie shuffles
+    if (list.length === 2 && list[0]?.constructor?.name === 'Pokemon') {
+        const items = list.map(p => `${p.name}(spd=${p.speed})`);
+        console.error(`[SPEED_SORT_JS_2POKE] turn=${battle.turn}, PRNG=${totalPrngCalls}, items=[${items.join(', ')}]`);
+    }
     // Log all speedSort calls with 3 handlers to debug the divergence
     if (list.length === 3) {
         console.error(`[SPEED_SORT_JS_3] turn=${battle.turn}, list.length=${list.length}, BEFORE sort, PRNG=${totalPrngCalls}`);

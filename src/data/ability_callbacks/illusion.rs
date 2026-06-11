@@ -46,15 +46,30 @@ pub fn on_before_switch_in(battle: &mut Battle, pokemon_pos: (usize, usize)) -> 
 
     // for (let i = pokemon.side.pokemon.length - 1; i > pokemon.position; i--)
     // Iterate from right to left through pokemon on the side
-    // NOTE: In JavaScript, pokemon.position is the party index (0-5), not the active slot.
-    // In Rust, we use pokemon_index which is the party index.
+    // NOTE: JavaScript swaps side.pokemon array entries on switch, so the array
+    // index equals pokemon.position. Rust keeps the party array fixed and
+    // mirrors the JS order in the `position` field, so iterate by position and
+    // resolve each position back to a party index.
     let side_pokemon_count = battle.sides[side_index].pokemon.len();
+    let pokemon_position = match battle.pokemon_at(side_index, pokemon_index) {
+        Some(p) => p.position,
+        None => return EventResult::Continue,
+    };
 
-    for i in (pokemon_index + 1..side_pokemon_count).rev() {
+    for i in (pokemon_position + 1..side_pokemon_count).rev() {
         // const possibleTarget = pokemon.side.pokemon[i];
+        let target_index = match battle.sides[side_index]
+            .pokemon
+            .iter()
+            .position(|p| p.position == i)
+        {
+            Some(idx) => idx,
+            None => continue,
+        };
+
         // if (!possibleTarget.fainted)
         let (target_fainted, target_base_species) = {
-            let target = match battle.pokemon_at(side_index, i) {
+            let target = match battle.pokemon_at(side_index, target_index) {
                 Some(p) => p,
                 None => continue,
             };
@@ -75,7 +90,7 @@ pub fn on_before_switch_in(battle: &mut Battle, pokemon_pos: (usize, usize)) -> 
                     Some(p) => p,
                     None => return EventResult::Continue,
                 };
-                pokemon.illusion = Some(i);
+                pokemon.illusion = Some(target_index);
             }
             break;
         }
