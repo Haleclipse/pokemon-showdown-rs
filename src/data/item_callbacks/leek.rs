@@ -31,13 +31,16 @@ pub fn on_modify_crit_ratio(
             None => return EventResult::Continue,
         };
 
-        // Get the ultimate base species (or current species if base_species is None)
+        // JS: species.baseSpecies defaults to the species name itself
         let ultimate_base = species_data
             .base_species
             .as_deref()
-            .unwrap_or_else(|| pokemon.base_species.as_str());
+            .unwrap_or(&species_data.name);
 
-        ultimate_base == "farfetchd" || ultimate_base == "sirfetchd"
+        // JS: this.toID(user.baseSpecies.baseSpecies) - normalize the display
+        // name (e.g. "Farfetch'd") to an ID before comparing
+        let ultimate_base_id = crate::dex_data::to_id(ultimate_base);
+        ultimate_base_id == "farfetchd" || ultimate_base_id == "sirfetchd"
     };
 
     if is_farfetchd_family {
