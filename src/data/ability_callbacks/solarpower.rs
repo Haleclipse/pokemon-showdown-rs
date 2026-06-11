@@ -13,16 +13,14 @@ use crate::event::EventResult;
 ///     }
 /// }
 pub fn on_modify_sp_a(battle: &mut Battle, _spa: i32, attacker_pos: (usize, usize), _defender_pos: (usize, usize), _active_move: Option<&crate::battle_actions::ActiveMove>) -> EventResult {
-    // Get field weather
-    let field_weather = battle.effective_weather();
-
     // Get pokemon and check effective weather
     let pokemon = match battle.pokemon_at(attacker_pos.0, attacker_pos.1) {
         Some(p) => p,
         None => return EventResult::Continue,
     };
 
-    let eff_weather = pokemon.effective_weather(battle, field_weather.as_str());
+    let eff_weather = pokemon.effective_weather(battle);
+    let eff_weather = eff_weather.as_str();
 
     if eff_weather == "sunnyday" || eff_weather == "desolateland" {
         battle.chain_modify(1.5); return EventResult::Continue;

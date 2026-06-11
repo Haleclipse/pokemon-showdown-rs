@@ -21,21 +21,27 @@ use crate::*;
 impl Pokemon {
     /// Get effective weather considering abilities and Utility Umbrella
     /// Equivalent to pokemon.ts effectiveWeather()
-    pub fn effective_weather<'a>(&self, battle: &Battle, field_weather: &'a str) -> &'a str {
+    ///
+    /// Like JS, this internally uses Field.effectiveWeather() (which returns ''
+    /// while a weather-suppressing ability such as Air Lock / Cloud Nine is
+    /// active), so callers must not pass in the raw field weather.
+    pub fn effective_weather(&self, battle: &Battle) -> ID {
+        // JS: const weather = this.battle.field.effectiveWeather();
+        let weather = battle.effective_weather();
         // JS: switch (weather) {
         // JS: case 'sunnyday': case 'raindance': case 'desolateland': case 'primordialsea':
         //         if (this.hasItem('utilityumbrella')) return '';
-        match field_weather {
+        match weather.as_str() {
             "sunnyday" | "raindance" | "desolateland" | "primordialsea" => {
                 // JS: if (this.hasItem('utilityumbrella')) return '';
                 if self.has_item(battle, &["utilityumbrella"]) {
-                    "" // Weather negated by Utility Umbrella
+                    ID::empty()
                 } else {
-                    field_weather
+                    weather
                 }
             }
             // JS: return weather;
-            _ => field_weather,
+            _ => weather,
         }
     }
 }

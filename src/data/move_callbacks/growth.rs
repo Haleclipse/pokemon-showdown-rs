@@ -18,14 +18,12 @@ pub fn on_modify_move(
     let pokemon = pokemon_pos;
 
     // if (['sunnyday', 'desolateland'].includes(pokemon.effectiveWeather())) move.boosts = { atk: 2, spa: 2 };
-    // NOTE: Must use battle.effective_weather() to account for Air Lock/Cloud Nine
-    let field_weather = battle.effective_weather();
     let effective_weather = {
         let pokemon_pokemon = match battle.pokemon_at(pokemon.0, pokemon.1) {
             Some(p) => p,
             None => return EventResult::Continue,
         };
-        pokemon_pokemon.effective_weather(battle, field_weather.as_str())
+        pokemon_pokemon.effective_weather(battle).to_string()
     };
 
     if effective_weather == "sunnyday" || effective_weather == "desolateland" {

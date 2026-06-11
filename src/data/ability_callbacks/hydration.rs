@@ -20,17 +20,15 @@ pub fn on_residual(battle: &mut Battle, pokemon_pos: (usize, usize), _source_pos
     use crate::battle::Arg;
 
     // if (pokemon.status && ['raindance', 'primordialsea'].includes(pokemon.effectiveWeather()))
-    let field_weather_id = battle.effective_weather();
-    let field_weather_str = field_weather_id.to_string();
     let (has_status, effective_weather) = {
         let pokemon = match battle.pokemon_at(pokemon_pos.0, pokemon_pos.1) {
             Some(p) => p,
             None => return EventResult::Continue,
         };
-        (!pokemon.status.is_empty(), pokemon.effective_weather(battle, &field_weather_str))
+        (!pokemon.status.is_empty(), pokemon.effective_weather(battle))
     };
 
-    if has_status && (effective_weather == "raindance" || effective_weather == "primordialsea") {
+    if has_status && (effective_weather.as_str() == "raindance" || effective_weather.as_str() == "primordialsea") {
         debug_elog!("hydration");
 
         let pokemon_id = {

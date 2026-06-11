@@ -41,8 +41,7 @@ pub fn on_weather_change(battle: &mut Battle, pokemon_pos: (usize, usize), _sour
         };
 
         let base_species_base_species = pokemon.get_base_species_base_species(&battle.dex);
-        let field_weather = battle.field.get_weather();
-        let effective_weather = pokemon.effective_weather(battle, field_weather.as_str());
+        let effective_weather = pokemon.effective_weather(battle);
 
         (
             pokemon.is_active,
@@ -137,10 +136,9 @@ pub fn on_ally_modify_atk(battle: &mut Battle, _atk: i32, _pokemon_pos: (usize, 
             None => return EventResult::Continue,
         };
 
-        let field_weather = battle.field.get_weather();
-        let effective_weather = ally.effective_weather(battle, field_weather.as_str());
+        let effective_weather = ally.effective_weather(battle);
 
-        effective_weather == "sunnyday" || effective_weather == "desolateland"
+        effective_weather.as_str() == "sunnyday" || effective_weather.as_str() == "desolateland"
     };
 
     if is_sunny {
@@ -189,10 +187,9 @@ pub fn on_ally_modify_sp_d(battle: &mut Battle, _spd: i32, _pokemon_pos: (usize,
             None => return EventResult::Continue,
         };
 
-        let field_weather = battle.field.get_weather();
-        let effective_weather = ally.effective_weather(battle, field_weather.as_str());
+        let effective_weather = ally.effective_weather(battle);
 
-        effective_weather == "sunnyday" || effective_weather == "desolateland"
+        effective_weather.as_str() == "sunnyday" || effective_weather.as_str() == "desolateland"
     };
 
     if is_sunny {

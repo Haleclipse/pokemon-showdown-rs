@@ -1,16 +1,13 @@
 # Current failing seeds (re-verified 2026-06-11 against pokemon-showdown-ts@16c2c7e)
-# 80 of the original 960 still fail: 13 winner mismatches, 67 turn/PRNG divergences
+# 75 remaining: see git history for fixes
 464445
 481111
 533594
 578061
-587528
 590417
 607803
 669203
-712619
 726019
-738395
 763038
 782969
 793470
@@ -35,7 +32,6 @@
 1153507
 1158684
 1183112
-1209681
 1218939
 1238204
 1267937
@@ -67,7 +63,6 @@
 2048784
 2148916
 2197637
-2199788
 2202725
 2208855
 2253853

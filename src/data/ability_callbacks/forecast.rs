@@ -51,8 +51,7 @@ pub fn on_weather_change(battle: &mut Battle, pokemon_pos: (usize, usize), _sour
         };
 
         let base_species_base_species = pokemon.get_base_species_base_species(&battle.dex);
-        let field_weather = battle.field.get_weather();
-        let effective_weather = pokemon.effective_weather(battle, field_weather.as_str());
+        let effective_weather = pokemon.effective_weather(battle);
 
         (
             pokemon.is_active,

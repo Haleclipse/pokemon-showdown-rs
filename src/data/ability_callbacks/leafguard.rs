@@ -21,17 +21,15 @@ pub fn on_set_status(battle: &mut Battle, _status_id: &str, target_pos: (usize, 
     use crate::battle::Arg;
 
     // if (['sunnyday', 'desolateland'].includes(target.effectiveWeather()))
-    let field_weather_id = battle.effective_weather();
-    let field_weather_str = field_weather_id.to_string();
     let effective_weather = {
         let target = match battle.pokemon_at(target_pos.0, target_pos.1) {
             Some(p) => p,
             None => return EventResult::Continue,
         };
-        target.effective_weather(battle, &field_weather_str)
+        target.effective_weather(battle)
     };
 
-    if effective_weather == "sunnyday" || effective_weather == "desolateland" {
+    if effective_weather.as_str() == "sunnyday" || effective_weather.as_str() == "desolateland" {
         // if ((effect as Move)?.status)
         // Check if effect is a move with status
         if let Some(eff_id) = effect_id {
@@ -77,17 +75,15 @@ pub fn on_try_add_volatile(battle: &mut Battle, status_id: &str, target_pos: (us
 
     // if (status.id === 'yawn' && ['sunnyday', 'desolateland'].includes(target.effectiveWeather()))
     if status_id == "yawn" {
-        let field_weather_id = battle.effective_weather();
-        let field_weather_str = field_weather_id.to_string();
         let effective_weather = {
             let target = match battle.pokemon_at(target_pos.0, target_pos.1) {
                 Some(p) => p,
                 None => return EventResult::Continue,
             };
-            target.effective_weather(battle, &field_weather_str)
+            target.effective_weather(battle)
         };
 
-        if effective_weather == "sunnyday" || effective_weather == "desolateland" {
+        if effective_weather.as_str() == "sunnyday" || effective_weather.as_str() == "desolateland" {
             let target_id = {
                 let target = match battle.pokemon_at(target_pos.0, target_pos.1) {
                     Some(p) => p,

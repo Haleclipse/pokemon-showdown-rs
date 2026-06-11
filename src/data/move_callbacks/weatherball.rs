@@ -34,14 +34,12 @@ pub fn on_modify_type(
     let pokemon = pokemon_pos;
 
     // switch (pokemon.effectiveWeather()) {
-    // NOTE: Must use battle.effective_weather() to account for Air Lock/Cloud Nine
-    let field_weather = battle.effective_weather();
     let effective_weather = {
         let pokemon_ref = match battle.pokemon_at(pokemon.0, pokemon.1) {
             Some(p) => p,
             None => return EventResult::Continue,
         };
-        pokemon_ref.effective_weather(battle, field_weather.as_str()).to_string()
+        pokemon_ref.effective_weather(battle).to_string()
     };
 
     if let Some(ref active_move) = battle.active_move {
@@ -104,14 +102,12 @@ pub fn on_modify_move(
     let pokemon = pokemon_pos;
 
     // switch (pokemon.effectiveWeather()) {
-    // NOTE: Must use battle.effective_weather() to account for Air Lock/Cloud Nine
-    let field_weather = battle.effective_weather();
     let effective_weather = {
         let pokemon_ref = match battle.pokemon_at(pokemon.0, pokemon.1) {
             Some(p) => p,
             None => return EventResult::Continue,
         };
-        pokemon_ref.effective_weather(battle, field_weather.as_str()).to_string()
+        pokemon_ref.effective_weather(battle).to_string()
     };
 
     let should_double = match effective_weather.as_ref() {
