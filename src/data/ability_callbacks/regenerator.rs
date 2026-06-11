@@ -20,7 +20,11 @@ pub fn on_switch_out(battle: &mut Battle, pokemon_pos: (usize, usize)) -> EventR
         hp_fraction(pokemon.base_maxhp, 3)
     };
 
-    battle.heal(heal_amount, Some(pokemon_pos), None, None);
+    // JS: pokemon.heal(...) is the direct Pokemon method - it adds HP without
+    // running TryHeal (so Heal Block does not stop it) and emits no message.
+    if let Some(pokemon) = battle.pokemon_at_mut(pokemon_pos.0, pokemon_pos.1) {
+        pokemon.heal(heal_amount);
+    }
     EventResult::Continue
 }
 

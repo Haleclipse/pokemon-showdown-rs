@@ -114,7 +114,11 @@ pub mod condition {
 
         if !is_fainted && (hp < maxhp || has_status) {
             // target.heal(target.maxhp);
-            battle.heal(maxhp, Some(target), None, None);
+            // JS: target.heal(target.maxhp) - direct Pokemon method, no
+            // TryHeal event and no message (the callback adds its own -heal)
+            if let Some(target_pokemon) = battle.pokemon_at_mut(target.0, target.1) {
+                target_pokemon.heal(maxhp);
+            }
 
             // target.clearStatus();
             Pokemon::clear_status(battle, target);

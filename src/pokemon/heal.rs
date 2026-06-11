@@ -20,6 +20,10 @@ impl Pokemon {
     // 	}
     //
     pub fn heal(&mut self, amount: i32) -> i32 {
+        // JS: if (!this.hp) return false;
+        if self.hp == 0 {
+            return 0;
+        }
         if self.hp >= self.maxhp {
             return 0;
         }
