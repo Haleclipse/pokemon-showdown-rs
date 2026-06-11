@@ -110,6 +110,17 @@ battle.speedSort = function(list, comparator) {
     }
 };
 
+// Optional weather trace: WEATHER_TRACE=1 logs every field.setWeather call
+if (process.env.WEATHER_TRACE) {
+    const originalSetWeather = battle.field.setWeather.bind(battle.field);
+    battle.field.setWeather = function(status, source, sourceEffect) {
+        const before = totalPrngCalls;
+        const result = originalSetWeather(status, source, sourceEffect);
+        console.error(`[SET_WEATHER_JS] turn=${battle.turn}, status=${typeof status === 'string' ? status : status.id}, result=${result}, weather_now=${battle.field.weather}, PRNG=${before}->${totalPrngCalls}`);
+        return result;
+    };
+}
+
 // Optional action trace: ACTION_TRACE=1 logs every runAction with PRNG counts
 if (process.env.ACTION_TRACE) {
     const originalRunAction = battle.runAction.bind(battle);

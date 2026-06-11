@@ -10,7 +10,7 @@ struct FieldEventHandler {
     is_field: bool,
     is_side: bool,
     side_idx: Option<usize>, // For side conditions, which side this handler is for
-    speed: i32,
+    speed: f64,
     order: Option<i32>,
     priority: i32,
     sub_order: i32,
@@ -78,15 +78,29 @@ impl Battle {
         let speed = if let Some((side_idx, poke_idx)) = holder {
             if let Some(side) = self.sides.get(side_idx) {
                 if let Some(pokemon) = side.pokemon.get(poke_idx) {
-                    pokemon.speed
+                    let mut speed = pokemon.speed as f64;
+                    // JS: if (callbackName.endsWith('SwitchIn')) {
+                    // JS:     const fieldPositionValue = pokemon.side.n * this.sides.length + pokemon.position;
+                    // JS:     handler.speed -= this.speedOrder.indexOf(fieldPositionValue) / (this.activePerHalf * 2);
+                    // JS: }
+                    // Pokemon speed ties are resolved (with PRNG shuffles) once in
+                    // runSwitch's speedSort; SwitchIn handlers inherit that order via
+                    // a fractional speed penalty instead of re-shuffling.
+                    if event_id == "SwitchIn" {
+                        let field_position_value = side_idx * self.sides.len() + pokemon.position;
+                        if let Some(index) = self.speed_order.iter().position(|&pos| pos == field_position_value) {
+                            speed -= index as f64 / (self.active_per_half * 2) as f64;
+                        }
+                    }
+                    speed
                 } else {
-                    0
+                    0.0
                 }
             } else {
-                0
+                0.0
             }
         } else {
-            0
+            0.0
         };
 
         FieldEventHandler {
@@ -446,7 +460,7 @@ impl Battle {
                 order: h.order,
                 priority: h.priority,
                 fractional_priority: 0.0,
-                speed: h.speed as f64,
+                speed: h.speed,
                 sub_order: h.sub_order,
                 effect_order: h.effect_order, // JavaScript: effectOrder for tie-breaking
                 index: 0,
