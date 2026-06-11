@@ -110,6 +110,18 @@ battle.speedSort = function(list, comparator) {
     }
 };
 
+// Optional handler trace: HANDLER_TRACE=onModifyMove logs handler lists
+if (process.env.HANDLER_TRACE) {
+    const origFind = battle.findEventHandlers.bind(battle);
+    battle.findEventHandlers = function(target, eventName, ...rest) {
+        const r = origFind(target, eventName, ...rest);
+        if (eventName === process.env.HANDLER_TRACE && r.length) {
+            console.error(`[HANDLER_TRACE] turn=${battle.turn}, ${eventName}, n=${r.length}, ids=[${r.map(h => h.effect.id).join(',')}]`);
+        }
+        return r;
+    };
+}
+
 // Optional weather trace: WEATHER_TRACE=1 logs every field.setWeather call
 if (process.env.WEATHER_TRACE) {
     const originalSetWeather = battle.field.setWeather.bind(battle.field);
@@ -189,6 +201,11 @@ battle.actions.useMove = function(moveOrMoveName, pokemon, options) {
 // Instrument runEvent to log BeforeMove events on turns 15-17
 const originalRunEvent = battle.runEvent.bind(battle);
 battle.runEvent = function(eventid, target, ...args) {
+    if (process.env.STATUS_TRACE && ['SetStatus', 'Immunity', 'TryAddVolatile'].includes(eventid)) {
+        const r = originalRunEvent(eventid, target, ...args);
+        console.error(`[STATUS_TRACE] turn=${battle.turn}, event=${eventid}, target=${target?.name}, relay=${JSON.stringify(args[2]?.id || args[2])}, result=${JSON.stringify(r?.id || r)}`);
+        return r;
+    }
     if (battle.turn >= 15 && battle.turn <= 17 && eventid === 'BeforeMove' && target && target.name) {
         console.error(`[RUNEVENT_JS] turn=${battle.turn}, event=BeforeMove, pokemon=${target.name}, status=${target.status || 'none'}, volatiles=${Object.keys(target.volatiles || {}).join(',') || 'none'}`);
     }
