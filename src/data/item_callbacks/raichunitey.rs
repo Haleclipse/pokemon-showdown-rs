@@ -12,26 +12,22 @@ use crate::event::EventResult;
 ///         item.megaStone === source.baseSpecies.name) return false;
 ///     return true;
 /// }
-pub fn on_take_item(battle: &mut Battle, item_pos: Option<(usize, usize)>, _pokemon_pos: (usize, usize), source_pos: Option<(usize, usize)>) -> EventResult {
+pub fn on_take_item(battle: &mut Battle, _item_pos: Option<(usize, usize)>, pokemon_pos: (usize, usize), _source_pos: Option<(usize, usize)>) -> EventResult {
     // if (item.megaEvolves === source.baseSpecies.name ||
     //     item.megaStone === source.baseSpecies.name) return false;
     // return true;
 
-    let source = match source_pos {
-        Some(pos) => pos,
-        None => return EventResult::Boolean(true),
-    };
+    // JS onTakeItem(item, source): `source` binds to singleEvent's target,
+    // i.e. the current holder (not the taker). The item is this callback's
+    // own item and is still held by the holder when TakeItem fires.
+    let source = pokemon_pos;
 
-    // Get the item being taken
-    let item_id = match item_pos {
-        Some(pos) => {
-            let pokemon = match battle.pokemon_at(pos.0, pos.1) {
-                Some(p) => p,
-                None => return EventResult::Boolean(true),
-            };
-            pokemon.item.clone()
-        }
-        None => return EventResult::Boolean(true),
+    let item_id = {
+        let pokemon = match battle.pokemon_at(source.0, source.1) {
+            Some(p) => p,
+            None => return EventResult::Boolean(true),
+        };
+        pokemon.item.clone()
     };
 
     // Get item data

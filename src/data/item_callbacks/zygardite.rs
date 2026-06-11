@@ -11,15 +11,15 @@ use crate::event::EventResult;
 ///     if (source.baseSpecies.baseSpecies === 'Zygarde') return false;
 ///     return true;
 /// }
-pub fn on_take_item(battle: &mut Battle, _item_pos: Option<(usize, usize)>, _pokemon_pos: (usize, usize), source_pos: Option<(usize, usize)>) -> EventResult {
+pub fn on_take_item(battle: &mut Battle, _item_pos: Option<(usize, usize)>, pokemon_pos: (usize, usize), _source_pos: Option<(usize, usize)>) -> EventResult {
     // if (source.baseSpecies.baseSpecies === 'Zygarde') return false;
     // return true;
 
     // Extract source's base species base species
-    let source = match source_pos {
-        Some(pos) => pos,
-        None => return EventResult::Boolean(true),
-    };
+    // JS onTakeItem(item, source): `source` binds to singleEvent's target,
+    // i.e. the current holder (not the taker). The item is this callback's
+    // own item and is still held by the holder when TakeItem fires.
+    let source = pokemon_pos;
 
     let source_base_species_base_species = {
         let source_pokemon = match battle.pokemon_at(source.0, source.1) {
