@@ -212,6 +212,31 @@ impl Battle {
             return EventResult::Continue;
         }
 
+        // JavaScript: const callback = customCallback || (effect as any)[`on${eventid}`];
+        // JavaScript: if (typeof callback === 'function') { returnVal = callback.apply(this, args); }
+        // JavaScript: else { returnVal = callback; }
+        // Non-function literal callbacks in the data are returned directly as
+        // the event result (e.g. onEat: false on no-effect berries,
+        // onTakeItem: false on Z crystals). Only `false` literals exist in the
+        // data files; `true` in the embedded JSON marks a ported function.
+        {
+            let literal_key = format!("on{}", event_id);
+            let has_literal_false = match effect_type {
+                EffectType::Item => self.dex.items().get(effect_id.as_str())
+                    .and_then(|d| d.extra.get(&literal_key))
+                    .is_some_and(|v| matches!(v, serde_json::Value::Bool(false))),
+                EffectType::Ability => self.dex.abilities().get(effect_id.as_str())
+                    .and_then(|d| d.extra.get(&literal_key))
+                    .is_some_and(|v| matches!(v, serde_json::Value::Bool(false))),
+                _ => self.dex.conditions().get_by_id(effect_id)
+                    .and_then(|d| d.extra.get(&literal_key))
+                    .is_some_and(|v| matches!(v, serde_json::Value::Bool(false))),
+            };
+            if has_literal_false {
+                return EventResult::Boolean(false);
+            }
+        }
+
         // Save parent event context
         // JavaScript: const parentEffect = this.effect;
         // JavaScript: const parentEffectState = this.effectState;
