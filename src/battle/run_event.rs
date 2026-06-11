@@ -401,6 +401,8 @@ impl Battle {
             });
         } else {
             // Speed sort (default)
+            debug_elog!("[RUN_EVENT {}] sorting {} handlers: {:?}", event_id, handlers.len(),
+                handlers.iter().map(|h| h.effect.id.as_str()).collect::<Vec<_>>());
             self.speed_sort_with_callsite(&mut handlers, |listener| {
                 Self::event_listener_to_priority_item(listener)
             }, &format!("run_event:{}", event_id));
