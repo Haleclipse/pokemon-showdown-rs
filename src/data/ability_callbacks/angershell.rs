@@ -25,29 +25,30 @@ pub fn on_damage(battle: &mut Battle, _damage: i32, _target_pos: (usize, usize),
     let should_check = if let Some(effect) = effect {
         // Check if effect type is Move (not just if a move with this ID exists!)
         if effect.effect_type == EffectType::Move {
-            // Get move data for additional checks
-            if let Some(move_data) = battle.dex.moves().get(effect.id.as_str()) {
-                // Check if move is not multi-hit
-                let is_not_multihit = move_data.multi_hit.is_none();
-
-                // Check if move has Sheer Force and source has sheerforce ability
-                let has_sheer_force_boost = if let Some(source_pos) = source_pos {
-                    let source_has_sheer_force = {
-                        let source = match battle.pokemon_at(source_pos.0, source_pos.1) {
-                            Some(p) => p,
-                            None => return EventResult::Continue,
-                        };
-                        source.has_ability(battle, &["sheerforce"])
-                    };
-                    move_data.has_sheer_force && source_has_sheer_force
-                } else {
-                    false
+            // Synthetic Move effects (the confusion self-hit) have no dex
+            // entry; JS reads effect.multihit / effect.hasSheerForce as
+            // undefined on them, so they count as single-hit non-SheerForce.
+            let (is_not_multihit, move_has_sheer_force) =
+                match battle.dex.moves().get(effect.id.as_str()) {
+                    Some(move_data) => (move_data.multi_hit.is_none(), move_data.has_sheer_force),
+                    None => (true, false),
                 };
 
-                is_not_multihit && !has_sheer_force_boost
+            // Check if move has Sheer Force and source has sheerforce ability
+            let has_sheer_force_boost = if let Some(source_pos) = source_pos {
+                let source_has_sheer_force = {
+                    let source = match battle.pokemon_at(source_pos.0, source_pos.1) {
+                        Some(p) => p,
+                        None => return EventResult::Continue,
+                    };
+                    source.has_ability(battle, &["sheerforce"])
+                };
+                move_has_sheer_force && source_has_sheer_force
             } else {
                 false
-            }
+            };
+
+            is_not_multihit && !has_sheer_force_boost
         } else {
             false
         }
