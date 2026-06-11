@@ -133,7 +133,7 @@ pub fn on_hit(
         battle.attr_last_move(&["[still]"]);
 
         // return this.NOT_FAIL;
-        return EventResult::Boolean(true);
+        return EventResult::NotFail;
     }
 
     EventResult::Continue

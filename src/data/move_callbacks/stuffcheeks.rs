@@ -68,11 +68,8 @@ pub fn on_try(
         }
     };
 
-    if !is_berry {
-        return EventResult::NotFail;
-    }
-
-    EventResult::Continue
+    // JS: return source.getItem().isBerry;
+    EventResult::Boolean(is_berry)
 }
 
 /// onHit(pokemon) {

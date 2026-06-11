@@ -39,11 +39,8 @@ pub fn on_try(
         source_pokemon.has_volatile(&ID::from("stockpile"))
     };
 
-    if has_stockpile {
-        EventResult::Continue
-    } else {
-        EventResult::NotFail
-    }
+    // JS: return !!source.volatiles['stockpile'];
+    EventResult::Boolean(has_stockpile)
 }
 
 /// onHit(pokemon) {

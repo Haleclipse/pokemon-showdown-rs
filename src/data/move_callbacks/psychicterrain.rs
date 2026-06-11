@@ -135,7 +135,7 @@ pub mod condition {
         );
 
         // return null;
-        EventResult::NotFail
+        EventResult::Null
     }
 
     /// onBasePower(basePower, attacker, defender, move) {
