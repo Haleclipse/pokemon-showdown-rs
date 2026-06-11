@@ -74,6 +74,9 @@ pub fn try_move_hit(
     // let hitResult = this.battle.singleEvent('Try', move, null, pokemon, target, move) &&
     //     this.battle.singleEvent('PrepareHit', move, {}, target, pokemon, move) &&
     //     this.battle.runEvent('PrepareHit', pokemon, target, move);
+    // JavaScript's && chain SHORT-CIRCUITS: when Try fails, the PrepareHit
+    // events never run - and their side effects (e.g. Snatch stealing the
+    // move in onAnyPrepareHit) must not happen either.
     let try_result = battle.single_event(
         "Try",
         &move_effect,
@@ -83,32 +86,33 @@ pub fn try_move_hit(
         Some(&move_effect),
         None,
     );
-
-    let prepare_hit_single = battle.single_event(
-        "PrepareHit",
-        &move_effect,
-        None,
-        Some(target),
-        Some(pokemon_pos),
-        Some(&move_effect),
-        None,
-    );
-
-    let prepare_hit_run = battle.run_event(
-                "PrepareHit",
-                Some(crate::event::EventTarget::Pokemon(pokemon_pos)),
-        Some(target),
-        Some(&move_effect),
-        crate::event::EventResult::Number(1),
-        false,
-        false,
-    ).is_truthy();
-
-    // JavaScript uses && operator which short-circuits on false
-    // Stop represents "return null" in JavaScript - should be treated as falsy
     let mut hit_result = !matches!(try_result, EventResult::Boolean(false) | EventResult::NotFail | EventResult::Null | EventResult::Stop);
-    hit_result = hit_result && !matches!(prepare_hit_single, EventResult::Boolean(false) | EventResult::NotFail | EventResult::Null | EventResult::Stop);
-    hit_result = hit_result && prepare_hit_run;
+
+    if hit_result {
+        let prepare_hit_single = battle.single_event(
+            "PrepareHit",
+            &move_effect,
+            None,
+            Some(target),
+            Some(pokemon_pos),
+            Some(&move_effect),
+            None,
+        );
+        hit_result = !matches!(prepare_hit_single, EventResult::Boolean(false) | EventResult::NotFail | EventResult::Null | EventResult::Stop);
+    }
+
+    if hit_result {
+        let prepare_hit_run = battle.run_event(
+            "PrepareHit",
+            Some(crate::event::EventTarget::Pokemon(pokemon_pos)),
+            Some(target),
+            Some(&move_effect),
+            crate::event::EventResult::Number(1),
+            false,
+            false,
+        ).is_truthy();
+        hit_result = prepare_hit_run;
+    }
 
     // if (!hitResult) {
     //     if (hitResult === false) {
