@@ -63,6 +63,12 @@ battle.speedSort = function(list, comparator) {
         const items = list.map(p => `${p.name}(spd=${p.speed})`);
         console.error(`[SPEED_SORT_JS_2POKE] turn=${battle.turn}, PRNG=${totalPrngCalls}, items=[${items.join(', ')}]`);
     }
+    // Optional caller traces for a turn window: SPEEDSORT_TRACE_TURNS="36,37"
+    if (process.env.SPEEDSORT_TRACE_TURNS &&
+        process.env.SPEEDSORT_TRACE_TURNS.split(',').includes(String(battle.turn))) {
+        const stack = new Error().stack.split('\n').slice(2, 9).map(l => l.trim()).join(' <- ');
+        console.error(`[SPEED_SORT_TRACE] turn=${battle.turn}, PRNG=${totalPrngCalls}, len=${list.length}, ${stack}`);
+    }
     // Log all speedSort calls with 3 handlers to debug the divergence
     if (list.length === 3) {
         console.error(`[SPEED_SORT_JS_3] turn=${battle.turn}, list.length=${list.length}, BEFORE sort, PRNG=${totalPrngCalls}`);
