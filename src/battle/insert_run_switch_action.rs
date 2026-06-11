@@ -33,12 +33,19 @@ impl Battle {
         let new_speed = self.get_pokemon_action_speed(side_index, pokemon_index);
         self.sides[side_index].pokemon[pokemon_index].speed = new_speed;
 
+        // JS: resolveAction() ends with this.battle.getActionSpeed(action),
+        // which calls pokemon.getActionSpeed() AGAIN for the action's speed.
+        // Each call runs getStat('spe') and fires its own ModifyBoost event,
+        // so the second computation must happen for PRNG parity (handler
+        // speed-tie shuffles consume rolls).
+        let action_speed = self.get_pokemon_action_speed(side_index, pokemon_index);
+
         // Create the runSwitch action
         let action = Action::Pokemon(PokemonAction {
             choice: PokemonActionType::RunSwitch,
             order: 101,
             priority: 0,
-            speed: self.sides[side_index].pokemon[pokemon_index].speed as f64,
+            speed: action_speed as f64,
             sub_order: 0,
             effect_order: 0,
             pokemon_index,

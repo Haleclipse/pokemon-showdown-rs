@@ -2,6 +2,7 @@
 
 // Enable debug logging
 global.POKEMON_DEBUG = true;
+Error.stackTraceLimit = 50;
 
 /**
  * JavaScript Battle Test Runner
@@ -43,10 +44,15 @@ battle.prng.rng.next = function() {
     totalPrngCalls++;
     const result = originalNext();
 
-    // Log PRNG calls on turns 41-43
-    if (battle.turn >= 41 && battle.turn <= 43) {
+    // Log PRNG calls on turns 41-43, or in a PRNG_TRACE_RANGE="from,to" window
+    let traceThis = battle.turn >= 41 && battle.turn <= 43;
+    if (process.env.PRNG_TRACE_RANGE) {
+        const [from, to] = process.env.PRNG_TRACE_RANGE.split(',').map(Number);
+        traceThis = totalPrngCalls >= from && totalPrngCalls <= to;
+    }
+    if (traceThis) {
         const stack = new Error().stack;
-        const lines = stack.split('\n').slice(1, 8); // Get first 7 frames
+        const lines = stack.split("\n").slice(1, 30);
         console.error(`[PRNG_JS] turn=${battle.turn}, call #${totalPrngCalls}, result=${result}`);
         lines.forEach((line, i) => console.error(`  ${line.trim()}`));
     }
@@ -103,6 +109,19 @@ battle.speedSort = function(list, comparator) {
         }
     }
 };
+
+// Optional action trace: ACTION_TRACE=1 logs every runAction with PRNG counts
+if (process.env.ACTION_TRACE) {
+    const originalRunAction = battle.runAction.bind(battle);
+    battle.runAction = function(action) {
+        const before = totalPrngCalls;
+        const desc = `${action.choice}${action.move ? ':' + action.move.id : ''}${action.pokemon ? ' by ' + action.pokemon.name : ''}`;
+        const result = originalRunAction(action);
+        const peek = battle.queue.peek()?.choice || 'empty';
+        console.error(`[ACTION_JS] turn=${battle.turn}, ${desc}, PRNG=${before}->${totalPrngCalls}, paused=${result}, peek_after=${peek}`);
+        return result;
+    };
+}
 
 battle.setPlayer('p1', {
     name: 'Player 1',
