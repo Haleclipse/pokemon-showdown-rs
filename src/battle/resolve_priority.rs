@@ -385,7 +385,10 @@ impl Battle {
                         2
                     }
                 }
-                EffectType::Status => 2,
+                // JS effectTypeOrder has no 'Status' key: a status condition's
+                // handler falls through to subOrder 0 (distinct from volatile
+                // 'Condition' handlers at 2, so they never speed-tie).
+                EffectType::Status => 0,
                 EffectType::SlotCondition => 3,
                 EffectType::SideCondition => 4,
                 EffectType::FieldCondition => 5,
