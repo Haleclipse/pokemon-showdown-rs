@@ -43,28 +43,16 @@ pub fn on_try_hit(
     }
 
     // if (target.getAbility().flags['failroleplay'] || source.getAbility().flags['cantsuppress']) return false;
-    let target_ability_data = match battle.dex.abilities().get_by_id(&target_ability) {
-        Some(a) => a,
-        None => return EventResult::Continue,
-    };
-    let source_ability_data = match battle.dex.abilities().get_by_id(&source_ability) {
-        Some(a) => a,
-        None => return EventResult::Continue,
-    };
+    // JS: getAbility() returns an empty Ability (empty flags) for an empty ability id,
+    // so a missing dex entry must be treated as "no flags", not an abort.
+    let target_failroleplay = battle.dex.abilities().get_by_id(&target_ability)
+        .and_then(|a| a.flags.get("failroleplay").copied())
+        .unwrap_or(0) != 0;
+    let source_cantsuppress = battle.dex.abilities().get_by_id(&source_ability)
+        .and_then(|a| a.flags.get("cantsuppress").copied())
+        .unwrap_or(0) != 0;
 
-    if target_ability_data
-        .flags
-        .get("failroleplay")
-        .copied()
-        .unwrap_or(0)
-        != 0
-        || source_ability_data
-            .flags
-            .get("cantsuppress")
-            .copied()
-            .unwrap_or(0)
-            != 0
-    {
+    if target_failroleplay || source_cantsuppress {
         return EventResult::Boolean(false);
     }
 

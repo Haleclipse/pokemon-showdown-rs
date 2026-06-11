@@ -54,12 +54,16 @@ pub fn on_hit(
         target_pokemon.ability.clone()
     };
 
-    let target_ability = match battle.dex.abilities().get(target_ability_id.as_str()) {
-        Some(a) => a,
-        None => return EventResult::Continue,
-    };
+    // JS: target.getAbility() returns an empty Ability object (empty flags) when the
+    // target has no ability (e.g. MissingNo.), so a missing dex entry must NOT abort.
+    let target_fail_roleplay = battle
+        .dex
+        .abilities()
+        .get(target_ability_id.as_str())
+        .map(|a| a.flags.contains_key("failroleplay"))
+        .unwrap_or(false);
 
-    if !target_ability.flags.contains_key("failroleplay") {
+    if !target_fail_roleplay {
         // for (const pokemon of source.alliesAndSelf()) {
         let allies_and_self = {
             let source_pokemon = match battle.pokemon_at(source.0, source.1) {

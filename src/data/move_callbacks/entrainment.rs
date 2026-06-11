@@ -72,19 +72,13 @@ pub fn on_try_hit(
         return EventResult::Boolean(false);
     }
 
-    let target_ability_data = {
-        let target_pokemon = match battle.pokemon_at(target.0, target.1) {
-            Some(p) => p,
-            None => return EventResult::Continue,
-        };
-        let ability_id = &target_pokemon.ability;
-        match battle.dex.abilities().get(ability_id.as_str()) {
-            Some(data) => data,
-            None => return EventResult::Continue,
-        }
-    };
+    // JS: target.getAbility() returns an empty Ability (empty flags) for an empty
+    // ability id, so a missing dex entry must be treated as "no flags", not an abort.
+    let target_cantsuppress = battle.dex.abilities().get(target_ability.as_str())
+        .map(|data| data.flags.contains_key("cantsuppress"))
+        .unwrap_or(false);
 
-    if target_ability_data.flags.contains_key("cantsuppress") {
+    if target_cantsuppress {
         return EventResult::Boolean(false);
     }
 
@@ -92,19 +86,11 @@ pub fn on_try_hit(
         return EventResult::Boolean(false);
     }
 
-    let source_ability_data = {
-        let source_pokemon = match battle.pokemon_at(source.0, source.1) {
-            Some(p) => p,
-            None => return EventResult::Continue,
-        };
-        let ability_id = &source_pokemon.ability;
-        match battle.dex.abilities().get(ability_id.as_str()) {
-            Some(data) => data,
-            None => return EventResult::Continue,
-        }
-    };
+    let source_noentrain = battle.dex.abilities().get(source_ability.as_str())
+        .map(|data| data.flags.contains_key("noentrain"))
+        .unwrap_or(false);
 
-    if source_ability_data.flags.contains_key("noentrain") {
+    if source_noentrain {
         return EventResult::Boolean(false);
     }
 
