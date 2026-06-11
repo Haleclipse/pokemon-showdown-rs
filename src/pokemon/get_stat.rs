@@ -52,11 +52,19 @@ impl Pokemon {
     // 	}
     //
     pub fn get_stat(&self, battle: &mut Battle, stat: StatID, unboosted: bool, unmodified: bool) -> i32 {
-        // JS: let statName = toID(statName) as StatIDExceptHP;
-        let mut stat_name = stat;
+        // JS: let stat = this.storedStats[statName];
+        // IMPORTANT: the base stat is read with the ORIGINAL stat name, BEFORE the
+        // Wonder Room swap below. The swap only redirects which boost stage (and
+        // Modify event) is used, per the JS comment about Download.
+        let base_stat = self.stored_stats.get(stat);
+
+        if stat == StatID::HP {
+            return base_stat;
+        }
 
         // JS: Download ignores Wonder Room's effect, but this results in
         // JS: stat stages being calculated on the opposite defensive stat
+        let mut stat_name = stat;
         if unmodified && battle.field.has_pseudo_weather(&ID::new("wonderroom")) {
             stat_name = match stat_name {
                 StatID::Def => StatID::SpD,
@@ -65,68 +73,62 @@ impl Pokemon {
             };
         }
 
-        // JS: let stat = this.storedStats[statName];
-        let base_stat = self.stored_stats.get(stat_name);
-
-        if unboosted {
-            return base_stat;
-        }
-
-        if stat_name == StatID::HP {
-            return base_stat;
-        }
-
         // Get pokemon position for event
         let pokemon_pos = (self.side_index, self.party_index);
 
-        // JS: if (!unmodified) {
-        //         boosts = this.battle.runEvent('ModifyBoost', this, null, null, { ...boosts });
-        //     }
-        // Get the boost for the requested stat, potentially modified by abilities like Unaware
-        let boost = if !unmodified {
-            // Run ModifyBoost event - allows abilities like Unaware to modify boosts
-            let modified_boosts = battle.run_event(
-                "ModifyBoost",
-                Some(crate::event::EventTarget::Pokemon(pokemon_pos)),
-                None,
-                None,
-                EventResult::Boost(self.boosts.clone()),
-                false,
-                false,
-            ).boost().unwrap_or(self.boosts.clone());
+        // JS: if (!unboosted) { ... apply stat boosts ... }
+        let mut stat_value = if !unboosted {
+            // JS: if (!unmodified) {
+            //         boosts = this.battle.runEvent('ModifyBoost', this, null, null, { ...boosts });
+            //     }
+            // Get the boost for the requested stat, potentially modified by abilities like Unaware
+            let boost = if !unmodified {
+                // Run ModifyBoost event - allows abilities like Unaware to modify boosts
+                let modified_boosts = battle.run_event(
+                    "ModifyBoost",
+                    Some(crate::event::EventTarget::Pokemon(pokemon_pos)),
+                    None,
+                    None,
+                    EventResult::Boost(self.boosts.clone()),
+                    false,
+                    false,
+                ).boost().unwrap_or(self.boosts.clone());
 
-            // Extract the (possibly modified) boost for this stat
-            match stat_name {
-                StatID::HP => 0,
-                StatID::Atk => modified_boosts.atk,
-                StatID::Def => modified_boosts.def,
-                StatID::SpA => modified_boosts.spa,
-                StatID::SpD => modified_boosts.spd,
-                StatID::Spe => modified_boosts.spe,
+                // Extract the (possibly modified) boost for this stat
+                match stat_name {
+                    StatID::HP => 0,
+                    StatID::Atk => modified_boosts.atk,
+                    StatID::Def => modified_boosts.def,
+                    StatID::SpA => modified_boosts.spa,
+                    StatID::SpD => modified_boosts.spd,
+                    StatID::Spe => modified_boosts.spe,
+                }
+            } else {
+                // unmodified: use raw boosts
+                match stat_name {
+                    StatID::HP => 0,
+                    StatID::Atk => self.boosts.atk,
+                    StatID::Def => self.boosts.def,
+                    StatID::SpA => self.boosts.spa,
+                    StatID::SpD => self.boosts.spd,
+                    StatID::Spe => self.boosts.spe,
+                }
+            };
+
+            // JS: const boostTable = [1, 1.5, 2, 2.5, 3, 3.5, 4];
+            let boost_table: [f64; 7] = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
+
+            // JS: if (boost > 6) boost = 6; if (boost < -6) boost = -6;
+            let clamped_boost = boost.clamp(-6, 6);
+
+            // JS: if (boost >= 0) { stat = Math.floor(stat * boostTable[boost]); } else { stat = Math.floor(stat / boostTable[-boost]); }
+            if clamped_boost >= 0 {
+                ((base_stat as f64) * boost_table[clamped_boost as usize]).floor() as i32
+            } else {
+                ((base_stat as f64) / boost_table[(-clamped_boost) as usize]).floor() as i32
             }
         } else {
-            // unmodified: use raw boosts
-            match stat_name {
-                StatID::HP => 0,
-                StatID::Atk => self.boosts.atk,
-                StatID::Def => self.boosts.def,
-                StatID::SpA => self.boosts.spa,
-                StatID::SpD => self.boosts.spd,
-                StatID::Spe => self.boosts.spe,
-            }
-        };
-
-        // JS: const boostTable = [1, 1.5, 2, 2.5, 3, 3.5, 4];
-        let boost_table: [f64; 7] = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
-
-        // JS: if (boost > 6) boost = 6; if (boost < -6) boost = -6;
-        let clamped_boost = boost.clamp(-6, 6);
-
-        // JS: if (boost >= 0) { stat = Math.floor(stat * boostTable[boost]); } else { stat = Math.floor(stat / boostTable[-boost]); }
-        let mut stat_value = if clamped_boost >= 0 {
-            ((base_stat as f64) * boost_table[clamped_boost as usize]).floor() as i32
-        } else {
-            ((base_stat as f64) / boost_table[(-clamped_boost) as usize]).floor() as i32
+            base_stat
         };
 
         // JS: if (!unmodified) {

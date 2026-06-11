@@ -162,6 +162,19 @@ if (process.env.GOTATTACKED_TRACE) {
     };
 }
 
+// Optional getStat trace: GETSTAT_TRACE=1 logs getStat calls with unmodified=true (Download etc.)
+if (process.env.GETSTAT_TRACE) {
+    const PokemonClass = require('./../../pokemon-showdown-ts/dist/sim/pokemon').Pokemon;
+    const origGetStat = PokemonClass.prototype.getStat;
+    PokemonClass.prototype.getStat = function(statName, unboosted, unmodified) {
+        const r = origGetStat.call(this, statName, unboosted, unmodified);
+        if (unmodified) {
+            console.error(`[GETSTAT_JS] turn=${battle.turn}, who=${this.name}, stat=${statName}, unboosted=${unboosted}, stored=${JSON.stringify(this.storedStats)}, boosts=${JSON.stringify(this.boosts)}, result=${r}`);
+        }
+        return r;
+    };
+}
+
 // Optional residual trace: RESIDUAL_TRACE=1 logs singleEvent calls during Residual and faintMessages
 if (process.env.RESIDUAL_TRACE) {
     const BattleClass = battle.constructor;

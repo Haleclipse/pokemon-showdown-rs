@@ -57,7 +57,9 @@ impl Battle {
     //
     pub fn get_pokemon_stat(&mut self, pokemon_pos: (usize, usize), stat: StatID, unboosted: bool, unmodified: bool) -> i32 {
         // JS: let stat = this.storedStats[statName];
-        // Get pokemon data we need
+        // IMPORTANT: the base stat is read with the ORIGINAL stat name, BEFORE the
+        // Wonder Room swap below. The swap only redirects which boost stage (and
+        // Modify event) is used, per the JS comment about Download.
         let (base_stat, boosts) = {
             let pokemon = match self.pokemon_at(pokemon_pos.0, pokemon_pos.1) {
                 Some(p) => p,
@@ -65,10 +67,6 @@ impl Battle {
             };
 
             let base_stat = pokemon.stored_stats.get(stat);
-            if unboosted {
-                return base_stat;
-            }
-
             if stat == StatID::HP {
                 return base_stat;
             }
@@ -77,54 +75,70 @@ impl Battle {
             (base_stat, pokemon.boosts.clone())
         };
 
-        // JS: if (!unmodified) {
-        //         boosts = this.battle.runEvent('ModifyBoost', this, null, null, { ...boosts });
-        //     }
-        // Get the boost for the requested stat, potentially modified by abilities like Unaware
-        let boost = if !unmodified {
-            // Run ModifyBoost event - allows abilities like Unaware to modify boosts
-            let modified_boosts = self.run_event(
-                "ModifyBoost",
-                Some(crate::event::EventTarget::Pokemon(pokemon_pos)),
-                None,
-                None,
-                EventResult::Boost(boosts.clone()),
-                false,
-                false,
-            ).boost().unwrap_or(boosts);
+        // JS: Download ignores Wonder Room's effect, but this results in
+        // JS: stat stages being calculated on the opposite defensive stat
+        let mut stat_name = stat;
+        if unmodified && self.field.has_pseudo_weather(&ID::new("wonderroom")) {
+            stat_name = match stat_name {
+                StatID::Def => StatID::SpD,
+                StatID::SpD => StatID::Def,
+                _ => stat_name,
+            };
+        }
 
-            // Extract the (possibly modified) boost for this stat
-            match stat {
-                StatID::HP => 0,
-                StatID::Atk => modified_boosts.atk,
-                StatID::Def => modified_boosts.def,
-                StatID::SpA => modified_boosts.spa,
-                StatID::SpD => modified_boosts.spd,
-                StatID::Spe => modified_boosts.spe,
+        // JS: if (!unboosted) { ... apply stat boosts ... }
+        let mut stat_value = if !unboosted {
+            // JS: if (!unmodified) {
+            //         boosts = this.battle.runEvent('ModifyBoost', this, null, null, { ...boosts });
+            //     }
+            // Get the boost for the requested stat, potentially modified by abilities like Unaware
+            let boost = if !unmodified {
+                // Run ModifyBoost event - allows abilities like Unaware to modify boosts
+                let modified_boosts = self.run_event(
+                    "ModifyBoost",
+                    Some(crate::event::EventTarget::Pokemon(pokemon_pos)),
+                    None,
+                    None,
+                    EventResult::Boost(boosts.clone()),
+                    false,
+                    false,
+                ).boost().unwrap_or(boosts);
+
+                // Extract the (possibly modified) boost for this stat
+                match stat_name {
+                    StatID::HP => 0,
+                    StatID::Atk => modified_boosts.atk,
+                    StatID::Def => modified_boosts.def,
+                    StatID::SpA => modified_boosts.spa,
+                    StatID::SpD => modified_boosts.spd,
+                    StatID::Spe => modified_boosts.spe,
+                }
+            } else {
+                // unmodified: use raw boosts
+                match stat_name {
+                    StatID::HP => 0,
+                    StatID::Atk => boosts.atk,
+                    StatID::Def => boosts.def,
+                    StatID::SpA => boosts.spa,
+                    StatID::SpD => boosts.spd,
+                    StatID::Spe => boosts.spe,
+                }
+            };
+
+            // JS: const boostTable = [1, 1.5, 2, 2.5, 3, 3.5, 4];
+            let boost_table: [f64; 7] = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
+
+            // JS: if (boost > 6) boost = 6; if (boost < -6) boost = -6;
+            let clamped_boost = boost.clamp(-6, 6);
+
+            // JS: if (boost >= 0) { stat = Math.floor(stat * boostTable[boost]); } else { stat = Math.floor(stat / boostTable[-boost]); }
+            if clamped_boost >= 0 {
+                ((base_stat as f64) * boost_table[clamped_boost as usize]).floor() as i32
+            } else {
+                ((base_stat as f64) / boost_table[(-clamped_boost) as usize]).floor() as i32
             }
         } else {
-            // unmodified: use raw boosts
-            match stat {
-                StatID::HP => 0,
-                StatID::Atk => boosts.atk,
-                StatID::Def => boosts.def,
-                StatID::SpA => boosts.spa,
-                StatID::SpD => boosts.spd,
-                StatID::Spe => boosts.spe,
-            }
-        };
-
-        // JS: const boostTable = [1, 1.5, 2, 2.5, 3, 3.5, 4];
-        let boost_table: [f64; 7] = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
-
-        // JS: if (boost > 6) boost = 6; if (boost < -6) boost = -6;
-        let clamped_boost = boost.clamp(-6, 6);
-
-        // JS: if (boost >= 0) { stat = Math.floor(stat * boostTable[boost]); } else { stat = Math.floor(stat / boostTable[-boost]); }
-        let mut stat_value = if clamped_boost >= 0 {
-            ((base_stat as f64) * boost_table[clamped_boost as usize]).floor() as i32
-        } else {
-            ((base_stat as f64) / boost_table[(-clamped_boost) as usize]).floor() as i32
+            base_stat
         };
 
         // JS: if (!unmodified) {
@@ -132,7 +146,7 @@ impl Battle {
         //         stat = this.battle.runEvent('Modify' + statTable[statName], this, null, null, stat);
         //     }
         if !unmodified {
-            let event_name = match stat {
+            let event_name = match stat_name {
                 StatID::Atk => "ModifyAtk",
                 StatID::Def => "ModifyDef",
                 StatID::SpA => "ModifySpA",
@@ -148,7 +162,7 @@ impl Battle {
         }
 
         // JS: if (statName === 'spe' && stat > 10000 && !this.battle.format.battle?.trunc) stat = 10000;
-        if stat == StatID::Spe && stat_value > 10000 {
+        if stat_name == StatID::Spe && stat_value > 10000 {
             stat_value = 10000;
         }
 
