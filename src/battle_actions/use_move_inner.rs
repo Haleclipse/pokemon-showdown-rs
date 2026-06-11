@@ -398,14 +398,31 @@ pub fn use_move_inner(
     battle.active_move = Some(crate::battle_actions::SharedActiveMove::new(active_move.clone()));
 
     // Run ModifyPriority to allow abilities like Prankster to boost priority
-    // This is needed because the active_move was just created from dex data with base priority
-    // Abilities like Dazzling check move.priority, which needs to include these boosts
+    // This is needed because the active_move was just created from dex data with
+    // base priority. In JS the action's move object (already carrying the
+    // priority computed in getActionSpeed via singleEvent + runEvent) is reused
+    // at runtime; Rust rebuilds the ActiveMove, so recompute BOTH events here.
+    // The move's own onModifyPriority (e.g. Grassy Glide +1 in Grassy Terrain)
+    // must run too - Quick Guard reads move.priority > 0.1.
+    let mut priority = active_move.priority as i32;
+    let single_priority = battle.single_event(
+        "ModifyPriority",
+        &move_effect,
+        None,
+        Some(pokemon_pos),
+        None,
+        None,
+        Some(EventResult::Number(priority)),
+    );
+    if let Some(n) = single_priority.number() {
+        priority = n;
+    }
     let priority_result = battle.run_event(
         "ModifyPriority",
         Some(crate::event::EventTarget::Pokemon(pokemon_pos)),
         target_pos,
         Some(&move_effect),
-        EventResult::Number(active_move.priority as i32),
+        EventResult::Number(priority),
         false,
         false,
     );
