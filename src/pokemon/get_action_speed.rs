@@ -18,7 +18,7 @@ impl Pokemon {
     //
     pub fn get_action_speed(&self, battle: &mut Battle) -> i32 {
         // JS: let speed = this.getStat('spe', false, false);
-        let pokemon_pos = (self.side_index, self.position);
+        let pokemon_pos = (self.side_index, self.party_index);
         let mut speed = battle.get_pokemon_stat(pokemon_pos, StatID::Spe, false, false);
 
         // JS: const trickRoomCheck = this.battle.ruleTable.has('twisteddimensionmod') ?

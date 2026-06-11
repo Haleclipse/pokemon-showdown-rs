@@ -123,7 +123,7 @@ impl Pokemon {
         // JS:     }
         // JS: }
         // ✅ NOW IMPLEMENTED: Loop through volatiles and remove linked volatiles
-        let this_pokemon = (self.side_index, self.position);
+        let this_pokemon = (self.side_index, self.party_index);
         for (_volatile_id, volatile_state) in &self.volatiles {
             // Check if this volatile has linkedStatus and linkedPokemon
             // Use borrow() to access SharedEffectState inner fields

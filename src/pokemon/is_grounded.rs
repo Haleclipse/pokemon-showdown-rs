@@ -73,7 +73,7 @@ impl Pokemon {
         // ✅ NOW IMPLEMENTED (Session 24 Part 94): Return None for Levitate (1:1 with JavaScript null)
         if self.has_ability(battle, &["levitate"]) {
             // If ability is being suppressed (e.g., by Mold Breaker), Levitate doesn't apply
-            if !battle.suppressing_ability(Some((self.side_index, self.position))) {
+            if !battle.suppressing_ability(Some((self.side_index, self.party_index))) {
                 return None; // JavaScript returns null here
             }
         }

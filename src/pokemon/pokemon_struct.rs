@@ -72,6 +72,12 @@ pub struct Pokemon {
     pub position: usize,
     // TODO: DELETE - Not in JavaScript Pokemon (Rust-specific for tracking)
     pub side_index: usize,
+    /// Index of this Pokemon in side.pokemon (Rust-specific).
+    /// JavaScript reorders side.pokemon on switch so the array index always
+    /// equals `position`; Rust keeps the array fixed, so `&self` methods need
+    /// this to reference themselves by party index. Set once at construction.
+    #[serde(default)]
+    pub party_index: usize,
     /// Is this Pokemon active on the field?
     /// JavaScript: isActive: boolean
     pub is_active: bool,

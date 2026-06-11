@@ -323,6 +323,9 @@ impl Pokemon {
             details: String::new(), // Will be set by details() method
 
             position,
+            // At construction position == array index; the Rust party array
+            // never reorders afterwards (only `position` fields swap).
+            party_index: position,
             side_index,
             is_active: false,
 

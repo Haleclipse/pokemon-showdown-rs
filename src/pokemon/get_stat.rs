@@ -77,7 +77,7 @@ impl Pokemon {
         }
 
         // Get pokemon position for event
-        let pokemon_pos = (self.side_index, self.position);
+        let pokemon_pos = (self.side_index, self.party_index);
 
         // JS: if (!unmodified) {
         //         boosts = this.battle.runEvent('ModifyBoost', this, null, null, { ...boosts });

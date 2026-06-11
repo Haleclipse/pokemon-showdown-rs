@@ -35,7 +35,7 @@ impl Pokemon {
         let mut best_stat = StatID::Atk;
         let mut best_value = 0;
 
-        let pokemon_pos = (self.side_index, self.position);
+        let pokemon_pos = (self.side_index, self.party_index);
 
         for stat in stats {
             let value = battle.get_pokemon_stat(pokemon_pos, stat, unboosted, unmodified);
