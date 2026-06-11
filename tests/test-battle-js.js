@@ -162,6 +162,26 @@ if (process.env.GOTATTACKED_TRACE) {
     };
 }
 
+// Optional residual trace: RESIDUAL_TRACE=1 logs singleEvent calls during Residual and faintMessages
+if (process.env.RESIDUAL_TRACE) {
+    const BattleClass = battle.constructor;
+    const origSingleEvent = BattleClass.prototype.singleEvent;
+    BattleClass.prototype.singleEvent = function(eventid, effect, state, target, source, sourceEffect, relayVar, customCallback) {
+        if (eventid.includes('Residual')) {
+            const tname = target?.name || target?.id || String(target);
+            console.error(`[RESIDUAL_JS] turn=${this.turn}, event=${eventid}, effect=${effect.id}, target=${tname}, fainted=${target?.fainted}, hp=${target?.hp}, PRNG=${totalPrngCalls}`);
+        }
+        return origSingleEvent.call(this, eventid, effect, state, target, source, sourceEffect, relayVar, customCallback);
+    };
+    const origFaintMessages = BattleClass.prototype.faintMessages;
+    BattleClass.prototype.faintMessages = function(...args) {
+        const queued = this.faintQueue.length;
+        const r = origFaintMessages.apply(this, args);
+        if (queued) console.error(`[RESIDUAL_JS] turn=${this.turn}, faintMessages processed ${queued} queued, PRNG=${totalPrngCalls}`);
+        return r;
+    };
+}
+
 // Optional weather trace: WEATHER_TRACE=1 logs every field.setWeather call
 if (process.env.WEATHER_TRACE) {
     const originalSetWeather = battle.field.setWeather.bind(battle.field);

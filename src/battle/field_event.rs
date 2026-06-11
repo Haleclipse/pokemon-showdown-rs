@@ -833,15 +833,19 @@ impl Battle {
 
                     // Pass the SharedEffectState directly to single_event
                     self.single_event(&handler_event_id, &crate::battle::Effect::new(handler.effect_id.clone(), handler._effect_type), state_owned, handler.holder, None, None, None);
-
-                    // JS: this.faintMessages();
-                    self.faint_messages(false, false, true);
-
-                    // JS: if (this.ended) return;
-                    if self.ended {
-                        return;
-                    }
                 }
+            }
+
+            // JS: this.faintMessages();
+            //     if (this.ended) return;
+            // IMPORTANT: In JS this runs at the end of EVERY handler iteration,
+            // OUTSIDE the `if (handler.callback)` block. A handler with no callback
+            // (e.g. a side condition that only has a duration) still processes the
+            // faint queue, marking queued Pokemon as fainted so that later handlers
+            // in this same Residual pass are skipped by the fainted check above.
+            self.faint_messages(false, false, true);
+            if self.ended {
+                return;
             }
         }
     }
