@@ -180,11 +180,10 @@ pub fn on_modify_move(
     {
         let target_loc = {
             let active_per_half = battle.active_per_half;
-            let pokemon_pokemon = match battle.pokemon_at(pokemon.0, pokemon.1) {
-                Some(p) => p,
-                None => return EventResult::Continue,
-            };
-            pokemon_pokemon.get_loc_of(target.0, target.1, active_per_half)
+            if battle.pokemon_at(pokemon.0, pokemon.1).is_none() {
+                return EventResult::Continue;
+            }
+            battle.get_loc_of(pokemon, target)
         };
 
         let pokemon_pokemon = match battle.pokemon_at_mut(pokemon.0, pokemon.1) {

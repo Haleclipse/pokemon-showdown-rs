@@ -335,9 +335,8 @@ pub mod condition {
 
             // this.actions.runMove('pursuit', source, source.getLocOf(pokemon));
             let target_loc = {
-                if let Some(source_pokemon) = battle.pokemon_at(source_pos.0, source_pos.1) {
-                    let active_per_half = battle.sides[0].active.len();
-                    source_pokemon.get_loc_of(pokemon_pos.0, pokemon_pos.1, active_per_half)
+                if battle.pokemon_at(source_pos.0, source_pos.1).is_some() {
+                    battle.get_loc_of(source_pos, pokemon_pos)
                 } else {
                     0 // Default location
                 }

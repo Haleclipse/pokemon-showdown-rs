@@ -466,17 +466,20 @@ impl BattleQueue {
                     battle.get_random_target(pokemon_pos.0, pokemon_pos.1, &move_target)
                 {
                     // Get the location of the target relative to the user
-                    if let Some(pokemon) = battle.pokemon_at(pokemon_pos.0, pokemon_pos.1) {
+                    if battle.pokemon_at(pokemon_pos.0, pokemon_pos.1).is_some() {
                         move_action.target_loc =
-                            pokemon.get_loc_of(target_side, target_idx, battle.active_per_half);
+                            battle.get_loc_of(pokemon_pos, (target_side, target_idx));
                     }
                 }
             }
 
             // JS: action.originalTarget = action.pokemon.getAtLoc(action.targetLoc);
-            if let Some(pokemon) = battle.pokemon_at(pokemon_pos.0, pokemon_pos.1) {
+            // Use Battle::get_at_loc which resolves the active slot to a party
+            // index via side.active; Pokemon::get_at_loc wrongly returned the
+            // slot itself as if it were a party index.
+            if battle.pokemon_at(pokemon_pos.0, pokemon_pos.1).is_some() {
                 move_action.original_target =
-                    pokemon.get_at_loc(move_action.target_loc, battle.active_per_half);
+                    battle.get_at_loc(pokemon_pos, move_action.target_loc);
             }
         }
 

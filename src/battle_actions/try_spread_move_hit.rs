@@ -97,39 +97,17 @@ pub fn try_spread_move_hit(
     let mut target_list: Vec<(usize, usize)> = targets.to_vec();
 
     // JS: if (targets.length > 1 && !move.smartTarget) move.spreadHit = true;
-    // IMPORTANT: The JavaScript comment above is incomplete. JavaScript ALSO sets spreadHit
-    // based on the move's target property. Moves with multi-target types like "allAdjacent",
-    // "allAdjacentFoes", etc. always get spreadHit=true, even if there's only 1 actual target.
-    // This is because Pokemon applies spread damage reduction to any move that CAN hit multiple
-    // targets, regardless of how many targets are actually hit.
-    //
-    // From JavaScript battle-actions.ts:
-    // The spread modifier is applied in modifyDamage if move.spreadHit is true.
-    // spreadHit is set in trySpreadMoveHit based on:
-    // 1. targets.length > 1, OR
-    // 2. The move's target is a multi-target type
-    //
-    // Multi-target types that should always set spreadHit:
-    // - allAdjacent: hits all adjacent Pokemon
-    // - allAdjacentFoes: hits all adjacent foes
-    // - all: hits all Pokemon on the field
-    let is_multi_target = matches!(
-        active_move.target.as_str(),
-        "allAdjacent" | "allAdjacentFoes" | "all"
-    );
-
-    if targets.len() > 1 || is_multi_target {
-        if active_move.smart_target != Some(true) {
-            if battle.turn >= 64 && battle.turn <= 66 {
-                debug_elog!("[TRY_SPREAD_MOVE_HIT] Setting spread_hit=true for move={}, targets.len()={}, is_multi_target={}",
-                    active_move.id, targets.len(), is_multi_target);
-            }
-            active_move.spread_hit = true;
-        }
-    } else {
-        if battle.turn >= 64 && battle.turn <= 66 {
-            debug_elog!("[TRY_SPREAD_MOVE_HIT] NOT setting spread_hit for move={}, targets.len()={}, is_multi_target={}",
-                active_move.id, targets.len(), is_multi_target);
+    // 1:1 with JS: ONLY the actual target count matters. In singles a spread-type
+    // move always has 1 target so spreadHit is never set; in doubles it is set
+    // exactly when the move resolves against 2+ targets.
+    if targets.len() > 1 && active_move.smart_target != Some(true) {
+        debug_elog!("[TRY_SPREAD_MOVE_HIT] Setting spread_hit=true for move={}, targets.len()={}",
+            active_move.id, targets.len());
+        active_move.spread_hit = true;
+        // battle.active_move was cloned before this point (JS shares the move
+        // object by reference); sync so damage calc reads the flag.
+        if let Some(ref battle_active_move) = battle.active_move {
+            battle_active_move.borrow_mut().spread_hit = true;
         }
     }
 

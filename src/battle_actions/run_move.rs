@@ -591,8 +591,8 @@ pub fn run_move(
                     Some(p) => p,
                     None => continue,
                 };
-                let active_per_half = battle.sides[dancer_pos.0].active.len();
-                dancer.get_loc_of(dancers_target.0, dancers_target.1, active_per_half)
+                let _ = dancer;
+                battle.get_loc_of(dancer_pos, dancers_target)
             };
 
             // this.runMove(move.id, dancer, dancersTargetLoc, { sourceEffect: this.dex.abilities.get('dancer'), externalMove: true });

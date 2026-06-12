@@ -147,11 +147,10 @@ pub fn on_start(
 
                 // JavaScript: moveTargetLoc = attacker.getLocOf(defender);
                 if let Some(def_pos) = defender_pos {
-                    let attacker = match battle.pokemon_at(pokemon_pos.0, pokemon_pos.1) {
-                        Some(p) => p,
-                        None => return EventResult::Continue,
-                    };
-                    move_target_loc = attacker.get_loc_of(def_pos.0, def_pos.1, 1);
+                    if battle.pokemon_at(pokemon_pos.0, pokemon_pos.1).is_none() {
+                        return EventResult::Continue;
+                    }
+                    move_target_loc = battle.get_loc_of(pokemon_pos, def_pos);
                 }
             }
         }

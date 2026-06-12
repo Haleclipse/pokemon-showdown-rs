@@ -103,8 +103,6 @@ mod get_moves;
 mod get_base_moves;
 mod to_json;
 mod get_combat_power;
-mod get_loc_of;
-mod get_at_loc;
 mod get_smart_targets;
 mod get_last_attacked_by;
 mod get_last_damaged_by;

@@ -233,8 +233,16 @@ fn main() {
 
     // Pass full seed value as 4th element, matching JavaScript behavior
     // JavaScript: new PRNG([0, 0, 0, seedNum]) where seedNum can be > 65535
+    // PS_FORMAT=gen9doublescustomgame enables doubles testing (mirrors the JS harness env switch)
+    let format_id = env::var("PS_FORMAT").unwrap_or_else(|_| "gen9randombattle".to_string());
+    let game_type = if format_id.contains("doubles") {
+        Some(pokemon_showdown::dex_data::GameType::Doubles)
+    } else {
+        None
+    };
     let mut battle = Battle::new(BattleOptions {
-        format_id: ID::new("gen9randombattle"),
+        format_id: ID::new(&format_id),
+        game_type,
         seed: Some(PRNGSeed::Gen5([0, 0, 0, seed_num])),
         p1: Some(PlayerOptions {
             name: "Player 1".to_string(),

@@ -136,15 +136,25 @@ impl Battle {
         }
 
         // JS: return pokemon.side.randomFoe() || pokemon.side.foe.active[0];
+        // randomFoe() samples this.foes() = foe.allies(), which iterates the foe's
+        // ACTIVE SLOTS in order (filtering out 0-HP). Building the candidate list
+        // in party-index order instead changes which Pokemon a given sample roll
+        // picks once switches have shuffled slot/party correspondence (doubles).
         let foe_side = if user_side == 0 { 1 } else { 0 };
         if foe_side < self.sides.len() {
-            // Try to get a random active foe
+            // Candidates in active-slot order, alive only (JS allies() filters !!hp)
             let valid_targets: Vec<usize> = self.sides[foe_side]
-                .pokemon
+                .active
                 .iter()
-                .enumerate()
-                .filter(|(_, p)| p.is_active && !p.is_fainted())
-                .map(|(idx, _)| idx)
+                .flatten()
+                .copied()
+                .filter(|&idx| {
+                    self.sides[foe_side]
+                        .pokemon
+                        .get(idx)
+                        .map(|p| p.hp > 0)
+                        .unwrap_or(false)
+                })
                 .collect();
 
             if !valid_targets.is_empty() {

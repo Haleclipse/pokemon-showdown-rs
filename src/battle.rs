@@ -140,6 +140,7 @@ mod randomizer;
 mod each_event;
 mod get_target;
 mod get_at_loc;
+mod get_loc_of;
 mod undo_choice;
 mod spread_damage;
 mod final_modify;

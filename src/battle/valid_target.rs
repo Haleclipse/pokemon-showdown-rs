@@ -16,8 +16,8 @@ impl Battle {
         target_type: &str,
     ) -> bool {
         // JS: return this.validTargetLoc(source.getLocOf(target), source, targetType);
-        let target_loc = if let Some(source_pokemon) = self.sides.get(source.0).and_then(|s| s.pokemon.get(source.1)) {
-            source_pokemon.get_loc_of(target.0, target.1, self.active_per_half) as i32
+        let target_loc = if self.sides.get(source.0).and_then(|s| s.pokemon.get(source.1)).is_some() {
+            self.get_loc_of(source, target) as i32
         } else {
             0
         };

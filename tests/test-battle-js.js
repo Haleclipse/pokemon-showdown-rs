@@ -34,7 +34,8 @@ if (!fs.existsSync(teamsFile)) {
 const teams = JSON.parse(fs.readFileSync(teamsFile, 'utf8'));
 
 // Create battle with specific seed
-const battle = new Battle({formatid: 'gen9randombattle'});
+// PS_FORMAT=gen9doublescustomgame enables doubles testing (teams are still injected via setPlayer)
+const battle = new Battle({formatid: process.env.PS_FORMAT || 'gen9randombattle'});
 battle.prng = new PRNG([0, 0, 0, seedNum]);
 
 // Wrap PRNG to count calls BEFORE setPlayer so we count initialization PRNG calls

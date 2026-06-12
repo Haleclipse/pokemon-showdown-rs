@@ -106,28 +106,18 @@ pub fn modify_damage(
     //   this.battle.debug(`Spread modifier: ${spreadModifier}`);
     //   baseDamage = this.battle.modify(baseDamage, spreadModifier);
     // }
-    // IMPORTANT: Spread moves only get damage reduction in multi-target battles (Doubles, Triples, etc.)
-    // In Singles, spreadHit may be true (for moves that CAN hit multiple targets), but no modifier is applied.
-    // The spread modifier is only for when there are actually multiple Pokemon on each side.
+    // 1:1 with JS: spreadHit alone decides. trySpreadMoveHit only sets it when
+    // the move actually resolved against 2+ targets, so no game-type exception
+    // is needed (in singles the flag is simply never set).
     if active_move.spread_hit {
-        // Only apply spread modifier in Doubles, Triples, FreeForAll, etc. NOT in Singles.
-        let should_apply_spread = !matches!(battle.game_type, crate::dex_data::GameType::Singles);
-
-        if should_apply_spread {
-            let spread_modifier = if battle.game_type == crate::dex_data::GameType::FreeForAll {
-                0.5
-            } else {
-                0.75
-            };
-            if battle.turn >= 64 && battle.turn <= 66 {
-                debug_elog!("[MODIFY_DAMAGE] Spread modifier: {}, game_type={:?}, spreadHit={}",
-                    spread_modifier, battle.game_type, active_move.spread_hit);
-            }
-            base_damage = battle.modify_f(base_damage, spread_modifier);
-        } else if battle.turn >= 64 && battle.turn <= 66 {
-            debug_elog!("[MODIFY_DAMAGE] NOT applying spread modifier (Singles format), game_type={:?}, spreadHit={}",
-                battle.game_type, active_move.spread_hit);
-        }
+        let spread_modifier = if battle.game_type == crate::dex_data::GameType::FreeForAll {
+            0.5
+        } else {
+            0.75
+        };
+        debug_elog!("[MODIFY_DAMAGE] Spread modifier: {}, game_type={:?}, spreadHit={}",
+            spread_modifier, battle.game_type, active_move.spread_hit);
+        base_damage = battle.modify_f(base_damage, spread_modifier);
     }
     // else if (move.multihitType === "parentalbond" && move.hit > 1) {
     //   const bondModifier = this.battle.gen > 6 ? 0.25 : 0.5;
