@@ -76,9 +76,62 @@ fn dispatch_fling_effect(battle: &mut Battle, item_id: &ID, target: (usize, usiz
                 );
             }
         }
-        // TODO: Add other items with fling.effect as needed
-        // Common ones: Mental Herb (cure infatuation/taunt/etc),
-        // Luminous Moss (+1 SpD if hit by Water), etc.
+        "mentalherb" => {
+            // Mental Herb's fling.effect: cure mental conditions
+            // JavaScript:
+            // effect(pokemon) {
+            //     const conditions = ['attract', 'taunt', 'encore', 'torment', 'disable', 'healblock'];
+            //     for (const firstCondition of conditions) {
+            //         if (pokemon.volatiles[firstCondition]) {
+            //             for (const secondCondition of conditions) {
+            //                 pokemon.removeVolatile(secondCondition);
+            //                 if (firstCondition === 'attract' && secondCondition === 'attract') {
+            //                     this.add('-end', pokemon, 'move: Attract', '[from] item: Mental Herb');
+            //                 }
+            //             }
+            //             return;
+            //         }
+            //     }
+            // }
+            let conditions = ["attract", "taunt", "encore", "torment", "disable", "healblock"];
+
+            let first_condition = {
+                let pokemon = match battle.pokemon_at(target.0, target.1) {
+                    Some(p) => p,
+                    None => return,
+                };
+                conditions
+                    .iter()
+                    .find(|c| pokemon.volatiles.contains_key(&ID::from(**c)))
+                    .copied()
+            };
+
+            if let Some(first_condition) = first_condition {
+                for second_condition in conditions {
+                    Pokemon::remove_volatile(battle, target, &ID::from(second_condition));
+                    if first_condition == "attract" && second_condition == "attract" {
+                        let pokemon_slot = {
+                            let pokemon = match battle.pokemon_at(target.0, target.1) {
+                                Some(p) => p,
+                                None => return,
+                            };
+                            pokemon.get_slot()
+                        };
+                        battle.add(
+                            "-end",
+                            &[
+                                crate::battle::Arg::from(pokemon_slot),
+                                crate::battle::Arg::from("move: Attract"),
+                                crate::battle::Arg::from("[from] item: Mental Herb"),
+                            ],
+                        );
+                    }
+                }
+            }
+        }
+        // NOTE: whiteherb and mentalherb are the ONLY items with fling.effect in
+        // gen9 data/items.ts (verified by audit). Other fling behaviors (status,
+        // volatileStatus, berries) are handled generically in onPrepareHit.
         _ => {
             // Unknown fling effect - log for debugging
             debug_elog!("[FLING] Unknown fling.effect for item: {}", item_id.as_str());
