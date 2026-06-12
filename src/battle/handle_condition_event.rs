@@ -70,6 +70,20 @@ impl Battle {
                     active_move_clone.as_ref()
                 )
             }
+            "FoeRedirectTarget" => {
+                // onFoeRedirectTarget(target, source, source2, move) - fired via
+                // priorityEvent('RedirectTarget', attacker, attacker, move, target).
+                // Follow Me / Rage Powder / Spotlight redirect the incoming move to
+                // the volatile holder (read from effect_state.target inside the
+                // callback). The event source is the ATTACKER.
+                let source_pos = self.event.as_ref().and_then(|e| e.source);
+                crate::data::move_callbacks::dispatch_condition_on_foe_redirect_target(
+                    self,
+                    condition_id,
+                    source_pos,
+                    active_move_clone.as_ref(),
+                )
+            }
             "Accuracy" => {
                 // Extract accuracy from relay_var, source from event
                 // onAccuracy is called on volatiles of the target to check if move hits

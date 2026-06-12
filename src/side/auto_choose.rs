@@ -95,6 +95,15 @@ impl Side {
                             break; // No fainted Pokemon found for revival
                         }
                     } else {
+                        // JS: if (!this.choice.forcedSwitchesLeft) return this.choosePass();
+                        // When more slots need replacements than there are healthy
+                        // benched Pokemon (e.g. a double KO with one teammate left),
+                        // the surplus slots PASS instead of aborting the choice.
+                        if self.choice.forced_switches_left == 0 {
+                            let _ = self.choose_pass();
+                            iterations += 1;
+                            continue;
+                        }
                         // Normal switch case: find first non-fainted Pokemon starting at active.length
                         // JavaScript iterates through pokemon array starting at active.length.
                         // Since JavaScript physically reorders the array when switching,

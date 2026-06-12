@@ -2085,20 +2085,23 @@ pub fn dispatch_condition_on_foe_disable_move(
 }
 
 /// Dispatch condition onFoeRedirectTarget callbacks
+/// IMPORTANT: dispatch by the CONDITION id (the redirecting volatile, e.g.
+/// 'ragepowder'), NOT the active move's id (the incoming attack).
 pub fn dispatch_condition_on_foe_redirect_target(
     battle: &mut Battle,
+    condition_id: &str,
+    source_pos: Option<(usize, usize)>,
     active_move: Option<&ActiveMove>,
-    source_pos: (usize, usize),
 ) -> EventResult {
-    let move_id = active_move.map(|m| m.id.as_str()).unwrap_or(""); match move_id {
+    match condition_id {
         "followme" => {
-            followme::condition::on_foe_redirect_target(battle, None, Some(source_pos), active_move)
+            followme::condition::on_foe_redirect_target(battle, None, source_pos, active_move)
         }
         "ragepowder" => {
-            ragepowder::condition::on_foe_redirect_target(battle, None, Some(source_pos), active_move)
+            ragepowder::condition::on_foe_redirect_target(battle, None, source_pos, active_move)
         }
         "spotlight" => {
-            spotlight::condition::on_foe_redirect_target(battle, None, Some(source_pos), active_move)
+            spotlight::condition::on_foe_redirect_target(battle, None, source_pos, active_move)
         }
         _ => EventResult::Continue,
     }

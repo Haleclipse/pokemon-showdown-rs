@@ -344,7 +344,9 @@ pub fn use_move_inner(
     // let targetRelayVar = { target };
     // targetRelayVar = this.battle.runEvent('ModifyTarget', pokemon, target, move, targetRelayVar, true);
     // if (targetRelayVar.target !== undefined) target = targetRelayVar.target;
-    let modify_target_result = battle.run_event("ModifyTarget", Some(crate::event::EventTarget::Pokemon(pokemon_pos)), target_pos, Some(&move_effect), EventResult::Continue, false, false);
+    // IMPORTANT: JS passes onEffect=true, so the MOVE's own onModifyTarget runs
+    // (e.g. Metal Burst retargeting to its lastDamagedBy slot).
+    let modify_target_result = battle.run_event("ModifyTarget", Some(crate::event::EventTarget::Pokemon(pokemon_pos)), target_pos, Some(&move_effect), EventResult::Continue, true, false);
 
     // Extract the new target if ModifyTarget returned a position
     if let EventResult::Position(new_target) = modify_target_result {
