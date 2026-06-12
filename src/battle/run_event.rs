@@ -801,12 +801,24 @@ impl Battle {
             }
             // Negative numbers (like -1 for type effectiveness) are passed through unchanged
         }
-        // NOTE: EventResult::Float values are PRESERVED unchanged.
-        // In JavaScript, non-integer numbers (like 0.1 for fractionalPriority or 55.00001
-        // from damage calculations) fail the `relayVar === Math.floor(relayVar)` check,
-        // so the modifier is NOT applied and the value is kept as-is.
-        // For FractionalPriority events, the callback returns Float(0.1) which must be
-        // preserved to correctly set action.fractionalPriority.
+        // EventResult::Float: JS does a RUNTIME value check, not a type check.
+        // A float whose value happens to be a non-negative integer (e.g. 40 * 1.1
+        // === 44 exactly in IEEE754, from Pink Bow's `return basePower * 1.1`)
+        // passes `relayVar === Math.abs(Math.floor(relayVar))` and gets the
+        // accumulated modifier applied (e.g. Rivalry's 0.75). Genuinely fractional
+        // values (0.1 for fractionalPriority, 55.00001 from damage calcs) fail the
+        // check and are preserved unchanged.
+        if let EventResult::Float(f) = relay_var {
+            if f >= 0.0 && f == f.floor() {
+                if let Some(ref event) = self.event {
+                    let modified = self.modify_internal(f as i32, event.modifier);
+                    // Keep the Float variant so callers that match on Float
+                    // (e.g. modify_damage's ModifySTAB) still receive the value;
+                    // only the VALUE follows JS's modify() (truncated integer).
+                    relay_var = EventResult::Float(modified as f64);
+                }
+            }
+        }
 
         // CRITICAL FIX: For EventResult::Boost, handlers may have modified the boosts in-place
         // via self.event.relay_var rather than returning a new value. In JavaScript, the boosts

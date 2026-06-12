@@ -33,6 +33,7 @@ pub fn on_base_power(battle: &mut Battle, _base_power: i32, attacker_pos: (usize
         (attacker.gender, defender.gender)
     };
 
+    debug_elog!("[RIVALRY] attacker={:?} gender={:?}, defender={:?} gender={:?}", attacker_pos, attacker_gender, defender_pos, defender_gender);
     if attacker_gender != Gender::None && defender_gender != Gender::None {
         if attacker_gender == defender_gender {
             battle.chain_modify(1.25);
