@@ -84,9 +84,15 @@ pub fn on_damage(battle: &mut Battle, _damage: i32, target_pos: (usize, usize), 
     }
 
     // Check if move category is Physical
+    // JS checks effect.category - the EFFECT causing the damage, not battle.activeMove.
+    // Confusion self-hit damage uses a synthetic {id:'confused', effectType:'Move'}
+    // effect with NO category, so Ice Face must NOT absorb it even though
+    // battle.activeMove (the move the confused Pokemon was about to use) may be
+    // Physical. Look the category up from the effect's move id in the dex;
+    // synthetic ids like 'confused' resolve to None -> not Physical.
     let (is_physical, species_id) = {
-        let active_move = match &battle.active_move {
-            Some(m) => m,
+        let effect_id = match effect {
+            Some(e) => e.id.clone(),
             None => return EventResult::Continue,
         };
 
@@ -95,7 +101,12 @@ pub fn on_damage(battle: &mut Battle, _damage: i32, target_pos: (usize, usize), 
             None => return EventResult::Continue,
         };
 
-        let is_phys = active_move.borrow().category == "Physical";
+        let is_phys = battle
+            .dex
+            .moves()
+            .get_by_id(&effect_id)
+            .map(|m| m.category == "Physical")
+            .unwrap_or(false);
         (is_phys, pokemon.species_id.clone())
     };
 
