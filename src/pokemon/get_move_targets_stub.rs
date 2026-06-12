@@ -244,11 +244,21 @@ impl Pokemon {
                                     EventResult::Number(encoded_target),
                                 );
 
-                                if let EventResult::Number(new_encoded) = redirect_result {
-                                    // Decode the new target position
-                                    let new_side = (new_encoded / 10) as usize;
-                                    let new_pos = (new_encoded % 10) as usize;
-                                    target = Some((new_side, new_pos));
+                                match redirect_result {
+                                    EventResult::Number(new_encoded) => {
+                                        // Decode the new target position (legacy encoding)
+                                        let new_side = (new_encoded / 10) as usize;
+                                        let new_pos = (new_encoded % 10) as usize;
+                                        target = Some((new_side, new_pos));
+                                    }
+                                    // Redirect handlers (Lightning Rod, Storm Drain,
+                                    // Follow Me, Rage Powder) return the new target as
+                                    // a Position - honoring it is what makes the
+                                    // redirection actually happen.
+                                    EventResult::Position(new_target) => {
+                                        target = Some(new_target);
+                                    }
+                                    _ => {}
                                 }
                             }
                         }

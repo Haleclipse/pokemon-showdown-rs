@@ -68,13 +68,21 @@ impl Battle {
         original_target: Option<(usize, usize)>,
     ) -> Option<(usize, usize)> {
         // JS: move = this.dex.moves.get(move);
-        let move_def = self.dex.moves().get(move_id.as_str())?;
-        let target_type = move_def.target.clone();
+        // JS returns an empty Move object (exists: false, target: undefined) for
+        // unknown ids like 'recharge'. The empty target type then falls through
+        // every branch below all the way to getRandomTarget -> randomFoe, which
+        // CONSUMES A SAMPLE ROLL in doubles. Do NOT early-return here.
+        let move_def = self.dex.moves().get(move_id.as_str());
+        let target_type = move_def.map(|m| m.target.clone()).unwrap_or_default();
+        let move_smart_target = move_def.and_then(|m| m.smart_target).unwrap_or(false);
+        let move_has_futuremove = move_def
+            .map(|m| m.flags.get("futuremove").unwrap_or(false))
+            .unwrap_or(false);
 
         // JS: let tracksTarget = move.tracksTarget;
         // JS: if (pokemon.hasAbility(['stalwart', 'propellertail'])) tracksTarget = true;
         let (user_side, user_idx) = user;
-        let mut tracks_target = move_def.tracks_target.unwrap_or(false);
+        let mut tracks_target = move_def.and_then(|m| m.tracks_target).unwrap_or(false);
 
         // Check if Pokemon has Stalwart or Propeller Tail abilities
         if let Some(side) = self.sides.get(user_side) {
@@ -103,7 +111,7 @@ impl Battle {
         // JS:     const curTarget = pokemon.getAtLoc(targetLoc);
         // JS:     return curTarget && !curTarget.fainted ? curTarget : this.getRandomTarget(pokemon, move);
         // JS: }
-        if move_def.smart_target.unwrap_or(false) {
+        if move_smart_target {
             // Try to get the Pokemon at target location
             if let Some(cur_target) = self.get_at_loc(user, target_loc) {
                 // If target exists and is not fainted, use it
@@ -146,11 +154,7 @@ impl Battle {
 
             if !has_self_targeting_volatile {
                 // If move has futuremove flag, return user (self), otherwise return None
-                let has_futuremove = move_def
-                    .flags
-                    .get("futuremove")
-                    .unwrap_or(false);
-                return if has_futuremove { Some(user) } else { None };
+                return if move_has_futuremove { Some(user) } else { None };
             }
         }
 
