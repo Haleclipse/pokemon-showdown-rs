@@ -178,6 +178,7 @@ pub fn dispatch_on_base_power(
         "electricterrain" => move_callbacks::electricterrain::condition::on_base_power(battle, base_power, pokemon_pos, target_pos),
         "gem" => gem::on_base_power(battle, base_power, pokemon_pos, target_pos, active_move),
         "grassyterrain" => move_callbacks::grassyterrain::condition::on_base_power(battle, base_power, pokemon_pos, target_pos),
+        "helpinghand" => move_callbacks::helpinghand::condition::on_base_power(battle, base_power, pokemon_pos, target_pos),
         "mefirst" => move_callbacks::mefirst::condition::on_base_power(battle, base_power, pokemon_pos, target_pos),
         "mistyterrain" => move_callbacks::mistyterrain::condition::on_base_power(battle, base_power, pokemon_pos, target_pos),
         "mudsport" => move_callbacks::mudsport::condition::on_base_power(battle, base_power, pokemon_pos, target_pos),

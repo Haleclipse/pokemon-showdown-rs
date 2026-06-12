@@ -41,7 +41,7 @@ pub fn self_drops(
     debug_elog!("[SELF_DROPS] Called with source_pos={:?}, is_secondary={}", source_pos, is_secondary);
 
     // Get moveData.self from active_move
-    let (has_self_data, has_boosts, self_chance, is_multihit, self_dropped) = {
+    let (has_self_data, has_boosts, self_chance, is_multihit, mut self_dropped) = {
         if let Some(ref active_move) = battle.active_move {
             let am = active_move.borrow();
             let has_self = am.self_effect.is_some();
@@ -208,7 +208,11 @@ pub fn self_drops(
                 }
 
                 // if (!move.multihit) move.selfDropped = true;
+                // IMPORTANT: also update the local flag - on a spread move (2+
+                // targets) JS only rolls ONCE; subsequent loop iterations see
+                // selfDropped=true and skip (e.g. Diamond Storm's 50% def boost).
                 if !is_multihit {
+                    self_dropped = true;
                     if let Some(ref active_move) = battle.active_move {
                         active_move.borrow_mut().self_dropped = true;
                     }
