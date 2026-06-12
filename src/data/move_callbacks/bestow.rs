@@ -63,10 +63,17 @@ pub fn on_hit(
     let take_item_event =
         battle.single_event("TakeItem", &item_effect, None, Some(target_pos), Some(source), None, None);
 
-    // Give item to target (the one receiving via Bestow)
-    let set_item_success = Pokemon::set_item(battle, target_pos, my_item.clone(), None, None);
+    // JS short-circuits: if the TakeItem event vetoes (e.g. a Plate refused to
+    // an Arceus target), setItem must NOT run - the target never gets the item.
+    let take_item_failed = matches!(take_item_event, EventResult::Boolean(false));
+    let set_item_success = if take_item_failed {
+        false
+    } else {
+        // Give item to target (the one receiving via Bestow)
+        Pokemon::set_item(battle, target_pos, my_item.clone(), None, None)
+    };
 
-    if matches!(take_item_event, EventResult::Boolean(false)) || !set_item_success {
+    if take_item_failed || !set_item_success {
         // source.item = myItem.id;
         // Restore item to source if transfer failed
         let source_pokemon = match battle.pokemon_at_mut(source.0, source.1) {
