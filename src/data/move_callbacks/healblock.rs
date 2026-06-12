@@ -373,11 +373,17 @@ pub mod condition {
                 return EventResult::Number(damage);
             }
 
-            // Check if the active move is a Z-move
-            if let Some(ref active_move) = battle.active_move {
-                if active_move.borrow().is_z.is_some() {
-                    return EventResult::Number(damage);
-                }
+            // JS checks (effect as Move).isZ - the EFFECT causing the heal, not
+            // battle.activeMove. E.g. when Volt Absorb heals during an opposing
+            // Z-move, effect is the ability (no isZ) and Heal Block still blocks.
+            let effect_is_z = battle
+                .dex
+                .moves()
+                .get_by_id(&crate::dex_data::ID::from(eff_id))
+                .map(|m| m.is_z.is_some())
+                .unwrap_or(false);
+            if effect_is_z {
+                return EventResult::Number(damage);
             }
         }
 
