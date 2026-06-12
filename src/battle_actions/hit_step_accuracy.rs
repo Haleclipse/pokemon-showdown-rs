@@ -100,6 +100,11 @@ pub fn hit_step_accuracy(
 
     for (i, &target_pos) in targets.iter().enumerate() {
         debug_elog!("[HIT_STEP_ACCURACY] Processing target {} of {}: {:?}", i, targets.len(), target_pos);
+        // JS: this.battle.activeTarget = target;
+        // Per-target update matters for spread moves: Unaware's ModifyBoost check
+        // compares against activeTarget, so each target's accuracy must be computed
+        // with itself as the active target.
+        battle.active_target = Some(target_pos);
         // Get base accuracy from move
         // Use the passed active_move parameter directly
         // JavaScript: let accuracy = move.accuracy;
