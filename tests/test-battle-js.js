@@ -81,7 +81,7 @@ battle.speedSort = function(list, comparator) {
     }
     // Optional: HANDLER_SORT_TRACE=1 logs every speedSort over event handlers (entries with .effect)
     if (process.env.HANDLER_SORT_TRACE && list.length >= 2 && list[0]?.effect) {
-        const items = list.map(h => `${h.effect?.id}(order=${h.order},prio=${h.priority},spd=${h.speed},sub=${h.subOrder},effOrd=${h.effectOrder})`);
+        const items = list.map(h => `${h.effect?.id}(order=${h.order},prio=${h.priority},spd=${h.speed},sub=${h.subOrder},effOrd=${h.effectOrder},stateTgt=${h.state?.target?.constructor?.name})`);
         console.error(`[HANDLER_SORT_JS] turn=${battle.turn}, PRNG=${totalPrngCalls}, handlers=[${items.join(', ')}]`);
     }
     // Log all speedSort calls with 3 handlers to debug the divergence

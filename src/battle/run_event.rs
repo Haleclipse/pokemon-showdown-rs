@@ -692,7 +692,12 @@ impl Battle {
                     // JavaScript: this.effectState.target = effectHolder modifies the original state
                     // because JS uses references. In Rust we cloned, so we need to update the original.
                     // This affects future resolve_priority calls which check state.target instanceof Field.
-                    if handler.effect.effect_type == EffectType::Condition && handler.effect_holder.is_none() {
+                    // find_field_event_handlers sets effect_holder = Some(EffectHolder::Field)
+                    // for pseudo-weather handlers (matching JS `effectHolder: customHolder || field`),
+                    // so match on Field (or None for safety), NOT is_none() alone.
+                    if matches!(handler.effect.effect_type, EffectType::Condition | EffectType::FieldCondition)
+                        && matches!(handler.effect_holder, None | Some(EffectHolder::Field))
+                    {
                         if let Some(pw_state) = self.field.pseudo_weather.get_mut(&effect_id) {
                             pw_state.borrow_mut().target_is_field = true;
                         }
