@@ -84,12 +84,15 @@ pub fn on_damage(battle: &mut Battle, _damage: i32, target_pos: (usize, usize), 
     }
 
     // Check if move category is Physical
-    // JS checks effect.category - the EFFECT causing the damage, not battle.activeMove.
-    // Confusion self-hit damage uses a synthetic {id:'confused', effectType:'Move'}
-    // effect with NO category, so Ice Face must NOT absorb it even though
-    // battle.activeMove (the move the confused Pokemon was about to use) may be
-    // Physical. Look the category up from the effect's move id in the dex;
-    // synthetic ids like 'confused' resolve to None -> not Physical.
+    // JS checks effect.category - the EFFECT causing the damage. That effect is
+    // the runtime ActiveMove object when the damage comes from an attack, so a
+    // dynamically modified category (e.g. Shell Side Arm's onModifyMove flipping
+    // Special -> Physical) must be honored. Confusion self-hit instead uses a
+    // synthetic {id:'confused', effectType:'Move'} effect with NO category, and
+    // battle.activeMove may be an unrelated Physical move at that moment.
+    // Resolution: if the effect id matches battle.active_move, use the runtime
+    // category; otherwise fall back to the dex (synthetic ids like 'confused'
+    // resolve to None -> not Physical).
     let (is_physical, species_id) = {
         let effect_id = match effect {
             Some(e) => e.id.clone(),
@@ -101,12 +104,24 @@ pub fn on_damage(battle: &mut Battle, _damage: i32, target_pos: (usize, usize), 
             None => return EventResult::Continue,
         };
 
-        let is_phys = battle
-            .dex
-            .moves()
-            .get_by_id(&effect_id)
-            .map(|m| m.category == "Physical")
-            .unwrap_or(false);
+        let runtime_category = battle.active_move.as_ref().and_then(|am| {
+            let am = am.borrow();
+            if am.id == effect_id {
+                Some(am.category.clone())
+            } else {
+                None
+            }
+        });
+
+        let is_phys = match runtime_category {
+            Some(cat) => cat == "Physical",
+            None => battle
+                .dex
+                .moves()
+                .get_by_id(&effect_id)
+                .map(|m| m.category == "Physical")
+                .unwrap_or(false),
+        };
         (is_phys, pokemon.species_id.clone())
     };
 
