@@ -104,7 +104,7 @@ pub fn on_foe_try_eat_item(battle: &mut Battle) -> EventResult {
 ///         this.boost({ spa: length }, source, source, this.dex.abilities.get('grimneigh'));
 ///     }
 /// }
-pub fn on_source_after_faint(battle: &mut Battle, _length: i32, _target_pos: Option<(usize, usize)>, source_pos: Option<(usize, usize)>, effect: Option<&crate::battle::Effect>) -> EventResult {
+pub fn on_source_after_faint(battle: &mut Battle, length: i32, _target_pos: Option<(usize, usize)>, source_pos: Option<(usize, usize)>, effect: Option<&crate::battle::Effect>) -> EventResult {
     use crate::dex_data::ID;
 
     // if (effect && effect.effectType === 'Move')
@@ -113,9 +113,9 @@ pub fn on_source_after_faint(battle: &mut Battle, _length: i32, _target_pos: Opt
         .unwrap_or(false);
 
     if is_move_effect {
-        // Effect is a move, boost Special Attack by 1 (length parameter not available in current dispatcher)
+        // this.boost({ spa: length }, source, source, 'grimneigh') - length = faint-batch size
         if let Some(src_pos) = source_pos {
-            battle.boost(&[("spa", 1)], src_pos, Some(src_pos), Some(&ID::from("grimneigh").to_string()), false, false);
+            battle.boost(&[("spa", length as i8)], src_pos, Some(src_pos), Some(&ID::from("grimneigh").to_string()), false, false);
         }
     }
     EventResult::Continue

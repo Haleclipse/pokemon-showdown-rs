@@ -14,7 +14,7 @@ use crate::event::EventResult;
 ///         this.boost({ atk: length }, source);
 ///     }
 /// }
-pub fn on_source_after_faint(battle: &mut Battle, _length: i32, _target_pos: Option<(usize, usize)>, source_pos: Option<(usize, usize)>, effect: Option<&Effect>) -> EventResult {
+pub fn on_source_after_faint(battle: &mut Battle, length: i32, _target_pos: Option<(usize, usize)>, source_pos: Option<(usize, usize)>, effect: Option<&Effect>) -> EventResult {
     // Check if effect exists and effectType === 'Move'
     let is_move_effect = effect
         .map(|e| e.effect_type == EffectType::Move)
@@ -23,7 +23,8 @@ pub fn on_source_after_faint(battle: &mut Battle, _length: i32, _target_pos: Opt
     if is_move_effect {
         // Effect is a move, boost Attack by 1
         if let Some(src_pos) = source_pos {
-            battle.boost(&[("atk", 1)], src_pos, None, None, false, false);
+            // this.boost({ atk: length }, source); - length = faint-batch size
+            battle.boost(&[("atk", length as i8)], src_pos, None, None, false, false);
         }
     }
     EventResult::Continue

@@ -88,7 +88,8 @@ pub fn on_hit(
         pokemon_pokemon.maxhp
     };
 
-    battle.direct_damage(max_hp / 2, Some(pokemon), None, None);
+    // JS passes the float maxhp/2; directDamage clamps nonzero amounts to >= 1.
+    battle.direct_damage(std::cmp::max(max_hp / 2, 1), Some(pokemon), None, None);
 
     // NOTE: directDamage in JavaScript does NOT trigger EmergencyExit.
     // The EmergencyExit check was incorrectly added here in a previous commit.

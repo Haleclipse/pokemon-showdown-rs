@@ -15,7 +15,7 @@ use crate::event::EventResult;
 ///         this.boost({ [bestStat]: length }, source);
 ///     }
 /// }
-pub fn on_source_after_faint(battle: &mut Battle, _length: i32, _target_pos: Option<(usize, usize)>, source_pos: Option<(usize, usize)>, effect: Option<&Effect>) -> EventResult {
+pub fn on_source_after_faint(battle: &mut Battle, length: i32, _target_pos: Option<(usize, usize)>, source_pos: Option<(usize, usize)>, effect: Option<&Effect>) -> EventResult {
     // Check if effect exists and effectType === 'Move'
     let is_move_effect = effect
         .map(|e| e.effect_type == EffectType::Move)
@@ -55,9 +55,8 @@ pub fn on_source_after_faint(battle: &mut Battle, _length: i32, _target_pos: Opt
                 _ => return EventResult::Continue, // Skip HP
             };
 
-            // this.boost({ [bestStat]: length }, source);
-            // In practice, length is always 1 for Beast Boost
-            battle.boost(&[(stat_name, 1)], src_pos, None, None, false, false);
+            // this.boost({ [bestStat]: length }, source); - length = faint-batch size
+            battle.boost(&[(stat_name, length as i8)], src_pos, None, None, false, false);
         }
     }
     EventResult::Continue

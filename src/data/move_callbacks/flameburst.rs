@@ -46,7 +46,9 @@ pub fn on_hit(
         };
 
         battle.damage(
-            base_max_hp / 16,
+            // JS passes the float baseMaxhp/16; spreadDamage clamps any nonzero
+            // amount to at least 1 (clampIntRange(damage, 1)), so floor+min-1.
+            std::cmp::max(base_max_hp / 16, 1),
             Some(ally_pos),
             Some(source),
             Some(&effect),
@@ -101,7 +103,9 @@ pub fn on_after_sub_damage(
         };
 
         battle.damage(
-            base_max_hp / 16,
+            // JS passes the float baseMaxhp/16; spreadDamage clamps any nonzero
+            // amount to at least 1 (clampIntRange(damage, 1)), so floor+min-1.
+            std::cmp::max(base_max_hp / 16, 1),
             Some(ally_pos),
             Some(source),
             Some(&effect),

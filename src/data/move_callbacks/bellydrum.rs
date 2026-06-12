@@ -43,7 +43,8 @@ pub fn on_hit(
     }
 
     // this.directDamage(target.maxhp / 2);
-    battle.direct_damage(maxhp / 2, Some(target), None, None);
+    // JS passes the float maxhp/2; directDamage clamps nonzero amounts to >= 1.
+    battle.direct_damage(std::cmp::max(maxhp / 2, 1), Some(target), None, None);
 
     // this.boost({ atk: 12 }, target);
     battle.boost(&[("atk", 12)], target, None, None, false, false);
