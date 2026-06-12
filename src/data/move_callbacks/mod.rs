@@ -927,16 +927,24 @@ pub fn has_on_hit(move_id: &str) -> bool {
         "heartswap" | "incinerate" | "instruct" | "jawlock" | "junglehealing" |
         "kingsshield" | "lockon" | "lunarblessing" | "magicpowder" | "maxguard" |
         "meanlook" | "metronome" | "mimic" | "mindreader" | "moonlight" |
-        "morningsun" | "naturepower" | "nightshade" | "obstruct" | "painsplit" |
-        "partingshot" | "pluck" | "powder" | "powersplit" | "powerswap" |
-        "powertrick" | "protect" | "psychup" | "psychoshift" | "psywave" |
-        "pursuit" | "quash" | "reflect" | "reflecttype" | "rest" | "roleplay" |
-        "sappyseed" | "seismictoss" | "shoreup" | "silktrap" | "simplebeam" |
-        "sketch" | "skillswap" | "sleeptalk" | "snatch" | "soak" |
-        "spectralthief" | "speedswap" | "spiderweb" | "spikycacoon" | "spikyshield" |
-        "spite" | "splash" | "stompingtantrum" | "storedpower" | "struggle" |
-        "substitute" | "superfang" | "synthesis" | "transform" |
+        "morningsun" | "obstruct" | "painsplit" |
+        "partingshot" | "pluck" | "powersplit" | "powerswap" |
+        "protect" | "psychup" | "psychoshift" |
+        "quash" | "reflecttype" | "rest" | "roleplay" |
+        "sappyseed" | "shoreup" | "silktrap" | "simplebeam" |
+        "sketch" | "skillswap" | "sleeptalk" | "soak" |
+        "speedswap" | "spiderweb" | "spikyshield" |
+        "spite" |
+        "substitute" | "synthesis" | "transform" |
         "trickortreat" | "venomdrench" | "wakeupslap" | "worryseed" => true,
+        // NOT in this list (no move-level onHit in JS data/moves.ts; their effects
+        // live in damageCallback / onTry / condition callbacks instead):
+        // naturepower, nightshade, powder, powertrick, psywave, pursuit, reflect,
+        // seismictoss, snatch, spectralthief, spikycacoon (not a real move),
+        // splash, stompingtantrum, storedpower, struggle, superfang
+        // Listing them here made runMoveEffects fire an empty singleEvent('Hit')
+        // whose relayVar=true laundered a Failed didSomething back into Success
+        // (e.g. a re-used Snatch whose addVolatile correctly failed).
         _ => false,
     }
 }

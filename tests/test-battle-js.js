@@ -167,6 +167,16 @@ if (process.env.GOTATTACKED_TRACE) {
     };
 }
 
+// Optional eachEvent trace: EACHEVENT_TRACE=1 logs every eachEvent call with a stack hint
+if (process.env.EACHEVENT_TRACE) {
+    const origEachEvent = battle.eachEvent.bind(battle);
+    battle.eachEvent = function(eventid, effect, relayVar) {
+        const stack = new Error().stack.split('\n').slice(2, 4).map(s => s.trim().replace(/.*at /, '').replace(/ \(.*/, '')).join(' < ');
+        console.error(`[EACHEVENT_JS] turn=${battle.turn}, event=${eventid}, PRNG=${totalPrngCalls}, from=${stack}`);
+        return origEachEvent(eventid, effect, relayVar);
+    };
+}
+
 // Optional getStat trace: GETSTAT_TRACE=1 logs getStat calls with unmodified=true (Download etc.)
 if (process.env.GETSTAT_TRACE) {
     const PokemonClass = require('./../../pokemon-showdown-ts/dist/sim/pokemon').Pokemon;
