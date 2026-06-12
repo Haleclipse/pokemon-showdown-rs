@@ -133,8 +133,13 @@ impl Pokemon {
         // Note: JavaScript passes item as 5th parameter (relayVar), but Rust run_event only accepts Option<i32>
         //       Passing None for now - handlers can check pokemon's item field
         let use_item_result = battle.run_event("UseItem", Some(crate::event::EventTarget::Pokemon(pokemon_pos)), None, None, EventResult::Continue, false, false);
-        // runEvent returns Option<i32>, None or Some(0) means failure
-        if matches!(use_item_result, EventResult::Number(0)) || matches!(use_item_result, EventResult::Null) {
+        // JS: if (this.battle.runEvent('UseItem', ...)) { ... } - any falsy result aborts.
+        // Boolean(false) is returned by handlers like Eject Pack's onUseItem when a
+        // switch is already pending (e.g. Emergency Exit set switchFlag this move).
+        if matches!(use_item_result, EventResult::Boolean(false))
+            || matches!(use_item_result, EventResult::Number(0))
+            || matches!(use_item_result, EventResult::Null)
+        {
             return None; // false in JavaScript
         }
 

@@ -119,8 +119,12 @@ impl Pokemon {
         //       Passing None for now - handlers can check pokemon's ability field after it's set
         if !_is_from_forme_change && !is_transform {
             let set_ability_result = battle.run_event("SetAbility", Some(crate::event::EventTarget::Pokemon(pokemon_pos)), source_pos, source_effect_ref, EventResult::Continue, false, false);
-            // runEvent returns Option<i32>, None or Some(0) means failure
-            if matches!(set_ability_result, EventResult::Number(0)) || matches!(set_ability_result, EventResult::Null) {
+            // JS: if (!setAbilityEvent) return setAbilityEvent;
+            // Any falsy result (false / null / 0) aborts.
+            if matches!(set_ability_result, EventResult::Boolean(false))
+                || matches!(set_ability_result, EventResult::Number(0))
+                || matches!(set_ability_result, EventResult::Null)
+            {
                 return ID::default();
             }
         }

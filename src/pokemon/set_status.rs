@@ -288,8 +288,12 @@ impl Pokemon {
         // JavaScript passes status as 5th parameter (relayVar) - handlers like Poison Puppeteer need to check the status ID
         if !status.as_str().is_empty() {
             let after_result = battle.run_event("AfterSetStatus", Some(crate::event::EventTarget::Pokemon(pokemon_pos)), source_pos, source_effect, EventResult::String(status.to_string()), false, false);
-            // runEvent returns Option<i32>, None or Some(0) means failure
-            if matches!(after_result, EventResult::Number(0)) || matches!(after_result, EventResult::Null) {
+            // JS: if (status.id && !this.battle.runEvent('AfterSetStatus', ...)) return false;
+            // Any falsy result (false / null / 0) aborts.
+            if matches!(after_result, EventResult::Boolean(false))
+                || matches!(after_result, EventResult::Number(0))
+                || matches!(after_result, EventResult::Null)
+            {
                 return false;
             }
         }
