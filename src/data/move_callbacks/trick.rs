@@ -120,12 +120,14 @@ pub fn on_hit(
     // Check if TakeItem events allow the swap
     let my_item_allowed = if let Some(ref my_item_id) = my_item {
         let my_item_effect = battle.make_item_effect(my_item_id);
+        // JS: singleEvent('TakeItem', myItem, source.itemState, target, source, ...)
+        // Event target is the RECEIVER of the item (target); source is the giver.
         let result = battle.single_event(
             "TakeItem",
             &my_item_effect,
             None,
-            Some(source),
             Some(target_pos),
+            Some(source),
             None,
             None,
         );
@@ -136,12 +138,14 @@ pub fn on_hit(
 
     let your_item_allowed = if let Some(ref your_item_id) = your_item {
         let your_item_effect = battle.make_item_effect(your_item_id);
+        // JS: singleEvent('TakeItem', yourItem, target.itemState, source, target, ...)
+        // Event target is the RECEIVER of the item (source); source is the giver.
         let result = battle.single_event(
             "TakeItem",
             &your_item_effect,
             None,
-            Some(target_pos),
             Some(source),
+            Some(target_pos),
             None,
             None,
         );

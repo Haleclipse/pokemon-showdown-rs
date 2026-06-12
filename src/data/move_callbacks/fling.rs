@@ -161,7 +161,8 @@ pub fn on_prepare_hit(
         Some(&move_effect),
         None,
     );
-    if take_item_result.boolean() == Some(false) {
+    // JS: if (!this.singleEvent('TakeItem', ...)) return false; - any falsy result fails.
+    if matches!(take_item_result, EventResult::Boolean(false) | EventResult::Null) {
         return EventResult::Boolean(false);
     }
 
