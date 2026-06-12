@@ -26,6 +26,7 @@ impl Pokemon {
         damage_value: Option<i32>,  // JavaScript: damageValue can be number | false | undefined
         source_side: usize,
         source_pos: usize,
+        source_position: usize, // source.position (active slot) - for the JS getSlot() semantics
     ) {
         let move_id = active_move.id.clone();
 
@@ -37,7 +38,10 @@ impl Pokemon {
             damage,
             this_turn: true,
             move_id: Some(move_id),
-            slot: (source_side, source_pos), // Same as source for tracking
+            // JS stores source.getSlot() ("p2a") - an ACTIVE SLOT reference, so later
+            // consumers (Metal Burst/Comeuppance getAtSlot) hit whoever occupies that
+            // slot now. Encode as (side_idx, active position).
+            slot: (source_side, source_position),
             damage_value, // JavaScript: damageValue: damage - None if not a number, Some(n) if numeric
         });
 

@@ -83,10 +83,15 @@ pub fn on_modify_target(
     // if (lastDamagedBy) {
     if let Some(damaged_by) = last_damaged_by {
         // targetRelayVar.target = this.getAtSlot(lastDamagedBy.slot);
-        let new_target = battle.pokemon_at(damaged_by.slot.0, damaged_by.slot.1);
-        if let Some(_target) = new_target {
-            // Modify the target by returning the new target position
-            return EventResult::Position(damaged_by.slot);
+        // slot is (side_idx, ACTIVE position); resolve via side.active so the
+        // redirect hits whoever occupies that slot now (e.g. after Volt Switch).
+        let (side_idx, position) = damaged_by.slot;
+        if let Some(Some(party_idx)) = battle
+            .sides
+            .get(side_idx)
+            .and_then(|s| s.active.get(position))
+        {
+            return EventResult::Position((side_idx, *party_idx));
         }
     }
 

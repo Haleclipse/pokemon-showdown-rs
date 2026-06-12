@@ -159,7 +159,14 @@ impl Battle {
                 let move_for_callback = self.dex.get_active_move(move_id.as_str());
                 move_callbacks::dispatch_on_modify_priority(self, move_for_callback.as_ref(), target_pos.unwrap_or((0,0)), priority)
             }
-            "ModifyTarget" => move_callbacks::dispatch_on_modify_target(self, active_move_clone.as_ref(), target_pos.unwrap_or((0,0))),
+            "ModifyTarget" => {
+                // IMPORTANT: Use move_id to look up the move, NOT active_move_clone.
+                // JS runs ModifyTarget BEFORE setActiveMove (useMoveInner), so when a
+                // called move fires it (e.g. Metronome -> Metal Burst), battle.active_move
+                // is still the caller and matching on it would miss the callee's callback.
+                let move_for_callback = self.dex.get_active_move(move_id.as_str());
+                move_callbacks::dispatch_on_modify_target(self, move_for_callback.as_ref(), target_pos.unwrap_or((0,0)))
+            }
             "ModifyType" => move_callbacks::dispatch_on_modify_type(self, active_move_clone.as_ref(), target_pos.unwrap_or((0,0)), source_pos),
             "MoveFail" => {
                 // CRITICAL: Use move_id to look up the move, NOT self.active_move!

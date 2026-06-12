@@ -713,8 +713,11 @@ pub fn hit_step_move_hit_loop(
                     Some(DamageResult::Damage(d)) => (d, Some(d)),
                     _ => (0, None),
                 };
+                let attacker_position = battle.pokemon_at(attacker_pos.0, attacker_pos.1)
+                    .map(|p| p.position)
+                    .unwrap_or(0);
                 if let Some(target_pokemon) = battle.pokemon_at_mut(target_pos.0, target_pos.1) {
-                    target_pokemon.got_attacked(active_move, damage_int, damage_value_opt, attacker_pos.0, attacker_pos.1);
+                    target_pokemon.got_attacked(active_move, damage_int, damage_value_opt, attacker_pos.0, attacker_pos.1, attacker_position);
                 }
 
                 if let Some(DamageResult::Damage(_)) = damage_value {
