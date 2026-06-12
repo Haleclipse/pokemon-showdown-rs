@@ -70,20 +70,17 @@ impl Side {
                     if has_revivalblessing {
                         // RevivalBlessing case: find first fainted Pokemon in POSITION order
                         // JS: slot = 0; while (!this.pokemon[slot].fainted) slot++;
-                        // JavaScript physically reorders the pokemon array by position, so we need
-                        // to iterate in position order to match.
-                        // IMPORTANT: Skip Pokemon at active positions (position < active.len) since
-                        // Revival Blessing revives a BENCH Pokemon, not an active one that just fainted.
+                        // JavaScript physically reorders the pokemon array by position, so we
+                        // iterate in position order to match. The scan INCLUDES active
+                        // positions: a just-KO'd active Pokemon (still occupying its slot)
+                        // is a valid - and often the first - revival target; runAction's
+                        // revivalblessing case then instaswitches it back into its slot.
                         let mut indices: Vec<usize> = (0..self.pokemon.len()).collect();
                         indices.sort_by_key(|&i| self.pokemon[i].position);
 
                         let mut found = false;
                         for &i in indices.iter() {
                             if let Some(pokemon) = self.pokemon.get(i) {
-                                // Skip Pokemon at active positions - they cannot be Revival Blessing targets
-                                if pokemon.position < self.active.len() {
-                                    continue;
-                                }
                                 if pokemon.is_fainted() {
                                     let _ = self.choose_switch(i);
                                     found = true;

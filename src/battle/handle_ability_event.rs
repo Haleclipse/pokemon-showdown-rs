@@ -194,35 +194,38 @@ impl Battle {
             "AllyFaint" => {
                 ability_callbacks::dispatch_on_ally_faint(self, ability_id.as_str(), Some(pokemon_pos))
             }
+            // JS: onAllyModifyAtk/SpD(stat, pokemon) - pokemon is the stat owner (event target)
             "AllyModifyAtk" => ability_callbacks::dispatch_on_ally_modify_atk(
                 self,
                 ability_id.as_str(),
                 relay_var_int,
-                pokemon_pos,
+                event_target_pos.unwrap_or(pokemon_pos),
             ),
             "AllyModifyAtkPriority" => ability_callbacks::dispatch_on_ally_modify_atk_priority(
                 self,
                 ability_id.as_str(),
                 relay_var_int,
-                pokemon_pos,
+                event_target_pos.unwrap_or(pokemon_pos),
             ),
             "AllyModifySpD" => ability_callbacks::dispatch_on_ally_modify_sp_d(
                 self,
                 ability_id.as_str(),
                 relay_var_int,
-                pokemon_pos,
+                event_target_pos.unwrap_or(pokemon_pos),
             ),
             "AllyModifySpDPriority" => ability_callbacks::dispatch_on_ally_modify_sp_d_priority(
                 self,
                 ability_id.as_str(),
                 relay_var_int,
-                pokemon_pos,
+                event_target_pos.unwrap_or(pokemon_pos),
             ),
             "AllySetStatus" => ability_callbacks::dispatch_on_ally_set_status(
                 self,
                 ability_id.as_str(),
                 event_status_id.as_str(),
-                pokemon_pos,
+                // JS: onAllySetStatus(status, target, source, effect) - target is the
+                // Pokemon receiving the status (event target), not the ability holder
+                event_target_pos.unwrap_or(pokemon_pos),
                 event_source_pos,
                 event_effect.as_ref(),
             ),
@@ -230,14 +233,16 @@ impl Battle {
                 self,
                 ability_id.as_str(),
                 Some(event_status_id.as_str()),
-                Some(pokemon_pos),
+                // JS: onAllyTryAddVolatile(status, target) - target is the event target
+                event_target_pos.or(Some(pokemon_pos)),
                 event_source_pos,
                 event_effect.as_ref(),
             ),
             "AllyTryBoost" => ability_callbacks::dispatch_on_ally_try_boost(
                 self,
                 ability_id.as_str(),
-                Some(pokemon_pos),
+                // JS: onAllyTryBoost(boost, target, source, effect) - target is the event target
+                event_target_pos.or(Some(pokemon_pos)),
                 event_source_pos,
                 event_effect.as_ref(),
             ),
@@ -584,10 +589,11 @@ impl Battle {
             "Flinch" => {
                 ability_callbacks::dispatch_on_flinch(self, ability_id.as_str(), pokemon_pos)
             }
+            // JS: onFoeAfterBoost(boost, target, source, effect) - target is the boosted Pokemon
             "FoeAfterBoost" => ability_callbacks::dispatch_on_foe_after_boost(
                 self,
                 ability_id.as_str(),
-                Some(pokemon_pos), event_source_pos, event_effect.as_ref()
+                event_target_pos.or(Some(pokemon_pos)), event_source_pos, event_effect.as_ref()
             ),
             "FoeMaybeTrapPokemon" => ability_callbacks::dispatch_on_foe_maybe_trap_pokemon(
                 self,

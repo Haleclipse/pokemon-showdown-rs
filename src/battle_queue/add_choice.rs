@@ -176,7 +176,7 @@ impl BattleQueue {
         // Call resolve_action with mid_turn=false (not mid-turn)
         let resolved_actions = BattleQueue::resolve_action(basic_action, battle, false);
 
-        debug_elog!("[ADD_CHOICE] Resolved {} actions for side {}", resolved_actions.len(), side_idx);
+        debug_elog!("[ADD_CHOICE] Resolved {} actions for side {} (choice_type={:?}, switch_index={:?})", resolved_actions.len(), side_idx, side_action.choice, side_action.switch_index);
 
         // JS: this.list.push(...resolvedChoices);
         for action in resolved_actions {
