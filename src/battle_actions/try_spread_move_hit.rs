@@ -287,6 +287,17 @@ pub fn try_spread_move_hit(
                     pokemon_pos,
                     active_move,
                 );
+                // TryHit handlers may mutate the shared move object in JS, e.g.
+                // Flash Fire sets move.accuracy = true for Fire moves so that
+                // NO target gets an accuracy roll afterwards. Those handlers
+                // write to battle.active_move in Rust; sync the accuracy back
+                // into our local copy before the accuracy step reads it.
+                if let Some(ref battle_active_move) = battle.active_move {
+                    let bam = battle_active_move.borrow();
+                    if bam.id == active_move.id {
+                        active_move.accuracy = bam.accuracy.clone();
+                    }
+                }
                 Some(results)
             }
             2 => {
