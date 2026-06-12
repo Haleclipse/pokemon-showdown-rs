@@ -30,6 +30,12 @@ impl SharedEffectState {
         self.0.borrow()
     }
 
+    /// Identity comparison (JS `===` on state objects): true if both wrap the
+    /// same underlying allocation, regardless of contents.
+    pub fn ptr_eq(&self, other: &SharedEffectState) -> bool {
+        Rc::ptr_eq(&self.0, &other.0)
+    }
+
     /// Borrow the inner EffectState mutably
     pub fn borrow_mut(&self) -> RefMut<'_, EffectState> {
         self.0.borrow_mut()

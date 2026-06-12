@@ -82,6 +82,8 @@ pub mod condition {
         use crate::dex_data::ID;
 
         let pokemon = pokemon_pos;
+        debug_elog!("[TOXICSPIKES_SWITCHIN] pokemon_pos={:?}, name={:?}", pokemon_pos,
+            battle.pokemon_at(pokemon_pos.0, pokemon_pos.1).map(|p| p.name.clone()));
 
         // if (!pokemon.isGrounded()) return;
         let is_grounded = {
@@ -92,6 +94,7 @@ pub mod condition {
             pokemon_ref.is_grounded(battle, false).unwrap_or(false)
         };
 
+        debug_elog!("[TOXICSPIKES_SWITCHIN] is_grounded={}", is_grounded);
         if !is_grounded {
             return EventResult::Continue;
         }
@@ -104,6 +107,7 @@ pub mod condition {
             };
             pokemon_ref.has_type(battle, "Poison")
         };
+        debug_elog!("[TOXICSPIKES_SWITCHIN] has_poison_type={}", has_poison_type);
 
         if has_poison_type {
             // this.add('-sideend', pokemon.side, 'move: Toxic Spikes', `[of] ${pokemon}`);

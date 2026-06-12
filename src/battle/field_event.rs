@@ -17,6 +17,10 @@ struct FieldEventHandler {
     effect_order: i32, // JavaScript: effectOrder (creation order for tie-breaking)
     has_callback: bool, // JavaScript: handler.callback !== undefined
     callback_name: String, // JavaScript: the callback name without "on" prefix (e.g., "AnySwitchIn" for onAnySwitchIn)
+    // JavaScript: handler.state - the effect state captured at collection time.
+    // Used for the identity check that skips handlers whose effect was removed
+    // by a prior handler (e.g. Toxic Spikes absorbed during a double switch).
+    state: Option<crate::event_system::SharedEffectState>,
 }
 
 impl Battle {
@@ -34,6 +38,7 @@ impl Battle {
         event_id: &str,
         effect_order: i32, // JavaScript: effectOrder from handler state
         has_callback: bool, // JavaScript: handler.callback !== undefined
+        state: Option<crate::event_system::SharedEffectState>, // JS: handler.state (identity for removal check)
     ) -> FieldEventHandler {
 
         // For field and side handlers, the callback name needs to be prefixed
@@ -116,6 +121,7 @@ impl Battle {
             sub_order,
             effect_order, // JavaScript: effectOrder for tie-breaking
             has_callback,
+            state,
             // Store callback name without "on" prefix for dispatch
             // e.g., "onAnySwitchIn" -> "AnySwitchIn", "onSwitchIn" -> "SwitchIn"
             callback_name: if is_field {
@@ -228,6 +234,7 @@ impl Battle {
                 event_id,
                 effect_order,
                 handler_has_callback,
+                handler.state.clone(),
             );
             handlers.push(handler);
         }
@@ -269,6 +276,7 @@ impl Battle {
                         event_id,
                         effect_order,
                         handler_has_callback,
+                        handler.state.clone(),
                     );
                     handlers.push(handler);
                 }
@@ -311,6 +319,7 @@ impl Battle {
                             event_id,
                             effect_order,
                             handler_has_callback,
+                            handler.state.clone(),
                         );
                         handlers.push(handler);
                     }
@@ -350,6 +359,7 @@ impl Battle {
                         event_id,
                         effect_order,
                         handler_has_callback,
+                        handler.state.clone(),
                     );
                     handlers.push(handler);
                 }
@@ -381,6 +391,7 @@ impl Battle {
                         event_id,
                         effect_order,
                         handler_has_callback,
+                        handler.state.clone(),
                     );
                     handlers.push(handler);
                 }
@@ -411,6 +422,7 @@ impl Battle {
                         event_id,
                         effect_order,
                         handler_has_callback,
+                        handler.state.clone(),
                     );
                     handlers.push(handler);
                 }
@@ -440,6 +452,7 @@ impl Battle {
                         event_id,
                         effect_order,
                         handler_has_callback,
+                        handler.state.clone(),
                     );
                     handlers.push(handler);
                 }
@@ -748,6 +761,41 @@ impl Battle {
                         }
                         continue;
                     }
+                }
+            }
+
+            // JS: effect may have been removed by a prior handler, i.e. Toxic Spikes
+            // being absorbed during a double switch. JS compares the handler's captured
+            // state object by identity (!==) against the state currently stored at the
+            // expected location; if they differ, the effect was removed or replaced and
+            // the handler is skipped. Slot conditions are exempt (JS: isSlotCondition).
+            // Weather/terrain/pseudo-weather states carry no `target` in JS, so the
+            // Field branch never fires in practice and is omitted here.
+            // NOTE: only the Side branch of the JS check is implemented. The Pokemon
+            // branch (ability/item/status/volatile state identity) cannot use the same
+            // identity comparison here because Rust rebuilds those SharedEffectState
+            // allocations at different times than JS does, which makes ptr_eq fire
+            // spuriously and skip live handlers (verified: 82 singles regressions).
+            {
+                use crate::battle::EffectType;
+                let skip = if handler._effect_type == EffectType::SideCondition {
+                    if let (Some(ref hstate), Some(side_idx)) = (&handler.state, handler.side_idx) {
+                        let expected = self
+                            .sides
+                            .get(side_idx)
+                            .and_then(|s| s.side_conditions.get(&handler.effect_id))
+                            .cloned();
+                        !expected.map(|e| e.ptr_eq(hstate)).unwrap_or(false)
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                };
+                if skip {
+                    debug_elog!("[FIELD_EVENT] Skipping handler '{}' - side condition was removed/replaced by a prior handler",
+                        handler.effect_id.as_str());
+                    continue;
                 }
             }
 
