@@ -134,18 +134,24 @@ pub mod condition {
             Some((target, slot)) => (target, slot),
             None => return EventResult::Continue,
         };
+        debug_elog!("[MIRRORCOAT_REDIRECT] source_pos={:?}, effect_target={:?}, effect_slot={:?}", source_pos, effect_target, effect_slot);
 
         if source_pos != effect_target || effect_slot.is_none() {
             return EventResult::Continue;
         }
 
         // return this.getAtSlot(this.effectState.slot);
-        if let Some(slot_num) = effect_slot {
-            let new_target = battle.get_at_slot(Some(&slot_num.to_string()));
-            if let Some(target) = new_target {
-                // Return the new target position for move redirection
-                let target_pos = (target.side_index, target.position);
-                return EventResult::Position(target_pos);
+        // slot encodes side*10 + ACTIVE POSITION (see onDamagingHit); resolve via
+        // side.active so the redirect hits whoever occupies that slot now.
+        if let Some(slot_code) = effect_slot {
+            let side_idx = (slot_code / 10) as usize;
+            let position = (slot_code % 10) as usize;
+            if let Some(Some(party_idx)) = battle
+                .sides
+                .get(side_idx)
+                .and_then(|s| s.active.get(position))
+            {
+                return EventResult::Position((side_idx, *party_idx));
             }
         }
 
@@ -193,16 +199,18 @@ pub mod condition {
 
         // this.effectState.slot = source.getSlot();
         // this.effectState.damage = 2 * damage;
-        let _slot = {
+        let slot_code = {
             let source_pokemon = match battle.pokemon_at(source.0, source.1) {
                 Some(p) => p,
                 None => return EventResult::Continue,
             };
-            source_pokemon.get_slot()
+            (source.0 as i32) * 10 + source_pokemon.position as i32
         };
 
         battle.with_effect_state(|state| {
-            state.slot = Some(source.1 as i32);
+            // JS stores source.getSlot() ("p1b") - an ACTIVE SLOT reference, so a
+            // later redirect hits whoever occupies that slot. Encode side*10+position.
+            state.slot = Some(slot_code);
             state.damage = Some(2 * damage);
         });
 

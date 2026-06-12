@@ -150,13 +150,18 @@ pub mod condition {
 
         match slot {
             None => EventResult::Continue,
-            Some(slot_num) => {
+            Some(slot_code) => {
                 // return this.getAtSlot(this.effectState.slot);
-                let slot_str = slot_num.to_string();
-                if let Some(new_target) = battle.get_at_slot(Some(&slot_str)) {
-                    // Return the new target position for move redirection
-                    let target_pos = (new_target.side_index, new_target.position);
-                    return EventResult::Position(target_pos);
+                // slot encodes side*10 + ACTIVE POSITION (see onDamagingHit); resolve
+                // via side.active so the redirect hits whoever occupies that slot now.
+                let side_idx = (slot_code / 10) as usize;
+                let position = (slot_code % 10) as usize;
+                if let Some(Some(party_idx)) = battle
+                    .sides
+                    .get(side_idx)
+                    .and_then(|s| s.active.get(position))
+                {
+                    return EventResult::Position((side_idx, *party_idx));
                 }
                 EventResult::Continue
             }
@@ -199,23 +204,19 @@ pub mod condition {
             debug_elog!("[COUNTER] on_damaging_hit: is_ally=false, category=Physical - storing damage * 2 = {}", 2 * damage);
             debug_elog!("[COUNTER] battle.effect = {:?}", battle.effect);
             // this.effectState.slot = source.getSlot();
-            let source_pokemon = match battle.pokemon_at(source.0, source.1) {
-                Some(p) => p,
-                None => return EventResult::Continue,
+            // JS stores source.getSlot() ("p1b") - an ACTIVE SLOT reference, so a
+            // later redirect hits whoever occupies that slot. Encode side*10+position.
+            let slot_code = {
+                let source_pokemon = match battle.pokemon_at(source.0, source.1) {
+                    Some(p) => p,
+                    None => return EventResult::Continue,
+                };
+                (source.0 as i32) * 10 + source_pokemon.position as i32
             };
-            let _slot = source_pokemon.get_slot();
 
             // this.effectState.damage = 2 * damage;
             let _update_result = battle.with_effect_state(|state| {
-                // Store slot as integer (parse from slot string like "a: Pikachu" -> position)
-                // Actually, slot is the string identifier, but we need to store it
-                // The slot field is i32, but Pokemon::get_slot() returns a string
-                // We'll store the position instead
-                // Looking at the JavaScript, slot is stored for use in getAtSlot
-                // In Rust, we may need to adjust - let's store it as string in a different way
-                // Actually wait - looking at the redirect code, it expects an i32
-                // Let me store the numeric position
-                state.slot = Some(source.1 as i32);
+                state.slot = Some(slot_code);
                 state.damage = Some(2 * damage);
                 debug_elog!("[COUNTER] on_damaging_hit: set effect_state: slot={:?}, damage={:?}", state.slot, state.damage);
             });

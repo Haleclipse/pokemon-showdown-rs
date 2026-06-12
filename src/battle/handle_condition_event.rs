@@ -70,6 +70,18 @@ impl Battle {
                     active_move_clone.as_ref()
                 )
             }
+            "RedirectTarget" => {
+                // onRedirectTarget(target, source, source2, move) - Counter/Mirror
+                // Coat volatiles redirect their own move to the slot that last
+                // damaged the user; Sky Drop redirects moves aimed at its target.
+                let source_pos = self.event.as_ref().and_then(|e| e.source);
+                crate::data::move_callbacks::dispatch_condition_on_redirect_target(
+                    self,
+                    condition_id,
+                    source_pos,
+                    active_move_clone.as_ref(),
+                )
+            }
             "FoeRedirectTarget" => {
                 // onFoeRedirectTarget(target, source, source2, move) - fired via
                 // priorityEvent('RedirectTarget', attacker, attacker, move, target).

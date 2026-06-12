@@ -2323,17 +2323,21 @@ pub fn dispatch_condition_on_override_action(
 /// Dispatch condition onRedirectTarget callbacks
 pub fn dispatch_condition_on_redirect_target(
     battle: &mut Battle,
+    condition_id: &str,
+    source_pos: Option<(usize, usize)>,
     active_move: Option<&ActiveMove>,
-    source_pos: (usize, usize),
 ) -> EventResult {
-    let move_id = active_move.map(|m| m.id.as_str()).unwrap_or(""); match move_id {
+    // Dispatch by the CONDITION id (the volatile owning the handler), not the
+    // incoming move's id. Counter/Mirror Coat redirect THEIR OWN move to the
+    // slot that last damaged them (checked inside the callbacks).
+    match condition_id {
         "counter" => {
-            counter::condition::on_redirect_target(battle, None, Some(source_pos), active_move)
+            counter::condition::on_redirect_target(battle, None, source_pos, active_move)
         }
         "mirrorcoat" => {
-            mirrorcoat::condition::on_redirect_target(battle, None, Some(source_pos), active_move)
+            mirrorcoat::condition::on_redirect_target(battle, None, source_pos, active_move)
         }
-        "skydrop" => skydrop::condition::on_redirect_target(battle, None, Some(source_pos)),
+        "skydrop" => skydrop::condition::on_redirect_target(battle, None, source_pos),
         _ => EventResult::Continue,
     }
 }

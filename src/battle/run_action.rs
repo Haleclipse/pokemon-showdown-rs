@@ -328,8 +328,12 @@ impl Battle {
                 let can_act = if let Some(side) = self.sides.get(side_idx) {
                     if let Some(pokemon) = side.pokemon.get(poke_idx) {
                         if pokemon.is_fainted() {
-                            debug_elog!("[RUN_ACTION] Pokemon is already fainted, skipping move execution: side={}, poke={}, move={}", side_idx, poke_idx, move_id.as_str());
-                            false  // Don't execute move, but continue to check_fainted
+                            // JS: if (action.pokemon.fainted) return false;
+                            // EARLY RETURN - skips the end-of-action eachEvent('Update')
+                            // too. Running Update here burned an extra speed-tie shuffle
+                            // roll in doubles when a fainted Pokemon's queued move came up.
+                            debug_elog!("[RUN_ACTION] Pokemon is already fainted, returning early: side={}, poke={}, move={}", side_idx, poke_idx, move_id.as_str());
+                            return;
                         } else {
                             true  // Pokemon can act
                         }
