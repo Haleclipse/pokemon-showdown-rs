@@ -191,8 +191,10 @@ impl Battle {
                 event_source_pos,  // defender = event.source
                 active_move_clone.as_ref(),
             ),
+            // JS: onAllyFaint(target) - target is the fainted ally (event target),
+            // not the ability holder (Receiver/Power of Alchemy copy ITS ability)
             "AllyFaint" => {
-                ability_callbacks::dispatch_on_ally_faint(self, ability_id.as_str(), Some(pokemon_pos))
+                ability_callbacks::dispatch_on_ally_faint(self, ability_id.as_str(), event_target_pos.or(Some(pokemon_pos)))
             }
             // JS: onAllyModifyAtk/SpD(stat, pokemon) - pokemon is the stat owner (event target)
             "AllyModifyAtk" => ability_callbacks::dispatch_on_ally_modify_atk(
