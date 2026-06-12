@@ -362,8 +362,12 @@ impl Battle {
                 self,
                 ability_id.as_str(),
                 relay_var_int,
+                // JS emits runEvent('ModifyDamage', pokemon=ATTACKER, target=VICTIM, ...),
+                // so handler args are (damage, source=event.target=attacker,
+                // target=event.source=victim, move). Friend Guard compares the VICTIM
+                // against effectState.target (the holder) to weaken ally damage only.
+                event_target_pos,
                 event_source_pos,
-                Some(pokemon_pos),
                 active_move_clone.as_ref(),
             ),
             "AnyModifyDef" => ability_callbacks::dispatch_on_any_modify_def(

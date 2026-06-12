@@ -337,10 +337,25 @@ impl Side {
                 // JS: if (pokemon.volatiles[lockedMoveID]?.targetLoc) {
                 // JS:   lockedMoveTargetLoc = pokemon.volatiles[lockedMoveID].targetLoc;
                 // JS: }
-                //
-                // For now, use targetLoc=0 as default (we can enhance this later
-                // to read from volatile state if needed)
-                let locked_target_loc = Some(0);
+                // A non-zero targetLoc here means resolveAction will NOT re-roll a
+                // random target - the locked move keeps attacking its original
+                // target (visible in doubles: Outrage stays on the same slot).
+                let locked_target_loc = {
+                    let pokemon = battle.pokemon_at(pokemon_pos.0, pokemon_pos.1);
+                    let last_loc = pokemon
+                        .and_then(|p| p.last_move_target_loc)
+                        .unwrap_or(0);
+                    let volatile_loc = pokemon
+                        .and_then(|p| p.volatiles.get(&locked_move_id))
+                        .and_then(|state| state.borrow().target_loc)
+                        .unwrap_or(0);
+                    // JS: volatile targetLoc takes precedence when truthy (non-zero)
+                    Some(if volatile_loc != 0 {
+                        volatile_loc as i8
+                    } else {
+                        last_loc
+                    })
+                };
 
                 // Queue the locked move
                 self.choice.actions.push(ChosenAction {
