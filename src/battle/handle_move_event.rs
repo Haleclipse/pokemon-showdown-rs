@@ -139,7 +139,11 @@ impl Battle {
                 }
             }
             "HitField" => move_callbacks::dispatch_on_hit_field(self, active_move_clone.as_ref(), target_pos.unwrap_or((0,0)), source_pos),
-            "HitSide" => move_callbacks::dispatch_on_hit_side(self, active_move_clone.as_ref(), target_pos.unwrap_or((0,0))),
+            // JS: onHitSide(side, source) - the Pokemon parameter the callbacks use
+            // (e.g. Quick Guard's source.addVolatile('stall')) is the move USER, not
+            // the side's representative target slot. In singles they coincide; in
+            // doubles target_pos may be a different ally (e.g. active[0]).
+            "HitSide" => move_callbacks::dispatch_on_hit_side(self, active_move_clone.as_ref(), source_pos.or(target_pos).unwrap_or((0,0))),
             "ModifyMove" => {
                 move_callbacks::dispatch_on_modify_move(self, target_pos.unwrap_or((0,0)), source_pos)
             }
