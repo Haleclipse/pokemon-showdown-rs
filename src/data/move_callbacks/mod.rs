@@ -1090,12 +1090,14 @@ pub fn dispatch_on_hit_field(
     target_pos: Option<(usize, usize)>,
 ) -> EventResult {
     let move_id = active_move.map(|m| m.id.as_str()).unwrap_or(""); match move_id {
-        "courtchange" => courtchange::on_hit_field(battle, target_pos, Some(pokemon_pos)),
+        // JS: onHitField(target, source, move) — target_pos is event.source (the user)
+        "courtchange" => courtchange::on_hit_field(battle, Some(pokemon_pos), target_pos),
         "flowershield" => flowershield::on_hit_field(battle, Some(pokemon_pos), active_move),
         "haze" => haze::on_hit_field(battle),
-        "perishsong" => perishsong::on_hit_field(battle, target_pos, Some(pokemon_pos), active_move),
-        "rototiller" => rototiller::on_hit_field(battle, target_pos, Some(pokemon_pos)),
-        "teatime" => teatime::on_hit_field(battle, target_pos, Some(pokemon_pos), active_move),
+        // JS: onHitField(target, source, move) — target_pos here is event.source (the move user)
+        "perishsong" => perishsong::on_hit_field(battle, Some(pokemon_pos), target_pos, active_move),
+        "rototiller" => rototiller::on_hit_field(battle, Some(pokemon_pos), target_pos),
+        "teatime" => teatime::on_hit_field(battle, Some(pokemon_pos), target_pos, active_move),
         _ => EventResult::Continue,
     }
 }
