@@ -155,14 +155,15 @@ impl Pokemon {
                 return -1; // all hits of multi-hit move should be not very effective
             }
 
-            // Get move category and id
-            let (move_category, move_id_str) = if let Some(ref active_move) = battle.active_move {
-                (active_move.borrow().category.clone(), active_move.borrow().id.as_str().to_string())
-            } else if let Some(move_data) = battle.dex.moves().get_by_id(move_id) {
-                (move_data.category.clone(), move_id.as_str().to_string())
-            } else {
-                return total_type_mod;
-            };
+            // Get move category and id from the PASSED move parameter, not
+            // battle.active_move. JS uses the `move` argument to runEffectiveness,
+            // which for entry hazards like Stealth Rock is a freshly-created
+            // ActiveMove("stealthrock", Status) — NOT the battle's current active
+            // move (e.g. Circle Throw that caused the switch-in).
+            let (move_category, move_id_str) = (
+                active_move.category.clone(),
+                active_move.id.as_str().to_string(),
+            );
 
             // JS: if (move.category === 'Status' || move.id === 'struggle' || !this.runImmunity(move) ||
             // JS:     totalTypeMod < 0 || this.hp < this.maxhp) {
