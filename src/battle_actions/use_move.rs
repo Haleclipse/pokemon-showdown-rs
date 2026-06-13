@@ -45,6 +45,19 @@ pub fn use_move(
     z_move: Option<&str>,
     max_move: Option<&str>,
 ) -> bool {
+    use_move_with_target_resolved(battle, move_data, pokemon_pos, target_pos, source_effect, z_move, max_move, false)
+}
+
+pub fn use_move_with_target_resolved(
+    battle: &mut crate::battle::Battle,
+    move_data: &MoveData,
+    pokemon_pos: (usize, usize),
+    target_pos: Option<(usize, usize)>,
+    source_effect: Option<&Effect>,
+    z_move: Option<&str>,
+    max_move: Option<&str>,
+    target_resolved: bool,
+) -> bool {
     debug_elog!("[USE_MOVE] ENTRY: move={}, pokemon=({}, {}), turn={}, PRNG={}",
         move_data.id.as_str(), pokemon_pos.0, pokemon_pos.1, battle.turn, battle.prng.call_count);
     // pokemon.moveThisTurnResult = undefined;
@@ -64,6 +77,7 @@ pub fn use_move(
         source_effect,
         z_move,
         max_move,
+        target_resolved,
     );
     debug_elog!("[USE_MOVE] use_move_inner returned {}, PRNG={}", move_result, battle.prng.call_count);
 

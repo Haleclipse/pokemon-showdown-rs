@@ -195,6 +195,7 @@ impl Battle {
         }
 
         // JS: return this.getRandomTarget(pokemon, move);
-        self.get_random_target(user_side, user_idx, &target_type)
+        let result = self.get_random_target(user_side, user_idx, &target_type);
+        result
     }
 }

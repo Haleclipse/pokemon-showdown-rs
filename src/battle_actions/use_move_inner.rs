@@ -177,6 +177,11 @@ pub fn use_move_inner(
     source_effect_param: Option<&Effect>,
     z_move_param: Option<&str>,
     max_move_param: Option<&str>,
+    // JS distinguishes target=null (from getTarget returning null) vs target=undefined
+    // (never set, e.g. Metronome callback). Only undefined triggers getRandomTarget in
+    // useMoveInner; null lets getMoveTargets handle it. When true, target was already
+    // resolved by getTarget (even if None/null) so we skip the getRandomTarget call.
+    target_resolved: bool,
 ) -> bool {
     debug_elog!("[USE_MOVE_INNER] ENTRY: move={}, pokemon=({}, {}), target={:?}, PRNG={}",
         move_data.id.as_str(), pokemon_pos.0, pokemon_pos.1, target_pos, battle.prng.call_count);
@@ -353,8 +358,10 @@ pub fn use_move_inner(
         target_pos = Some(new_target);
     }
 
-    // if (target === undefined) target = this.battle.getRandomTarget(pokemon, move);
-    if target_pos.is_none() {
+    // JS: if (target === undefined) target = this.battle.getRandomTarget(pokemon, move);
+    // Only when target was never resolved (JS undefined). If target_resolved=true,
+    // None means getTarget returned null — getMoveTargets handles it.
+    if target_pos.is_none() && !target_resolved {
         target_pos = battle.get_random_target(pokemon_pos.0, pokemon_pos.1, &active_move.target);
     }
 

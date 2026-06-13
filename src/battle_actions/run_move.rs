@@ -384,7 +384,11 @@ pub fn run_move(
     } else {
         std::borrow::Cow::Borrowed(move_data)
     };
-    let move_did_something = crate::battle_actions::use_move(
+    // Use target_resolved=true because run_move already called get_target.
+    // This prevents use_move_inner from calling getRandomTarget again when
+    // get_target returned None (JS null), matching JS's undefined vs null
+    // distinction in useMoveInner.
+    let move_did_something = crate::battle_actions::use_move_with_target_resolved(
         battle,
         &effective_move_data,
         pokemon_pos,
@@ -392,6 +396,7 @@ pub fn run_move(
         source_effect_for_use_move.as_ref(),
         z_move.as_deref(),
         max_move.as_deref(),
+        true,
     );
 
     // this.battle.lastSuccessfulMoveThisTurn = moveDidSomething ? this.battle.activeMove && this.battle.activeMove.id : null;

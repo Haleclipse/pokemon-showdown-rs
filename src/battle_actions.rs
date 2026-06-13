@@ -88,6 +88,7 @@ pub use can_terastallize::can_terastallize;
 pub use run_mega_evo::run_mega_evo;
 pub use terastallize::terastallize;
 pub use use_move::use_move;
+pub use use_move::use_move_with_target_resolved;
 pub use use_move_inner::use_move_inner;
 pub use switch_in::switch_in;
 pub use drag_in::drag_in;
