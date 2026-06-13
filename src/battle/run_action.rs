@@ -396,7 +396,7 @@ impl Battle {
                                 move_action.zmove.clone(), // z_move
                                 false, // external_move
                                 move_action.max_move.clone(), // max_move
-                                None, // original_target
+                                move_action.original_target, // JS: action.originalTarget (set in resolveAction)
                                 move_action.prankster_boosted, // prankster_boosted flag from action queue
                             );
                             debug_elog!("[RUN_ACTION] After run_move, move={}", move_id.as_str());
