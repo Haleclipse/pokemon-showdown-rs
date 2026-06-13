@@ -96,16 +96,19 @@ impl Pokemon {
         let move_id = &active_move.id;
         let mut targets: Vec<(usize, usize)> = Vec::new();
 
-        // Get move data to access target and flags
-        let (move_target, has_mustpressure, has_futuremove, has_smart_target) =
+        // JS: switch (move.target) — uses the ActiveMove's runtime target, NOT the
+        // dex definition. Moves like Expanding Force change their target in
+        // ModifyMove (normal → allAdjacentFoes), and getMoveTargets must respect
+        // the updated value to produce the correct target list and spread modifier.
+        let move_target = active_move.target.clone();
+        let (has_mustpressure, has_futuremove, has_smart_target) =
             match battle.dex.moves().get(move_id.as_str()) {
                 Some(m) => (
-                    m.target.clone(),
                     m.flags.contains_key("mustpressure"),
                     m.flags.contains_key("futuremove"),
                     m.smart_target.unwrap_or(false),
                 ),
-                None => return GetMoveTargetsResult { targets: vec![], pressure_targets: vec![], should_clear_smart_target: false },
+                None => (false, false, false),
             };
 
         // Track whether smartTarget should be set to false (when only one target is found)
