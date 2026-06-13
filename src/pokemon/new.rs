@@ -447,7 +447,10 @@ impl Pokemon {
 
             attacked_by: Vec::new(),
 
-            weight_hg: 0,
+            // JS: this.weighthg = 1; (then setSpecies updates from species data)
+            weight_hg: dex.species().get(&set.species)
+                .map(|s| (s.weightkg as f64 * 10.0) as i32)
+                .unwrap_or(1),
             speed: 0,
 
             can_mega_evo: None,
