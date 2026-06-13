@@ -29,9 +29,16 @@ fn run_battle_inner(seed_num: u32, dex: &Dex) -> String {
     let team2 = team_generator::generate_random_team(&mut prng, dex);
 
     // Create battle with fresh PRNG (same seed)
+    let format_id = std::env::var("PS_FORMAT").unwrap_or_else(|_| "gen9randombattle".to_string());
+    let game_type = if format_id.contains("doubles") {
+        Some(pokemon_showdown::dex_data::GameType::Doubles)
+    } else {
+        None
+    };
     let mut battle = Battle::new(BattleOptions {
-        format_id: ID::new("gen9randombattle"),
+        format_id: ID::new(&format_id),
         seed: Some(PRNGSeed::Gen5([0, 0, 0, seed_num])),
+        game_type,
         p1: Some(PlayerOptions {
             name: "Player 1".to_string(),
             team: TeamFormat::Sets(team1),

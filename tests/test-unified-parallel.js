@@ -94,7 +94,7 @@ if (isMainThread) {
             const team1 = generateRandomTeam(prng, allSpecies, allMoves, allItems, allNatures, Dex);
             const team2 = generateRandomTeam(prng, allSpecies, allMoves, allItems, allNatures, Dex);
 
-            const battle = new Battle({formatid: 'gen9randombattle'});
+            const battle = new Battle({formatid: process.env.PS_FORMAT || 'gen9randombattle'});
             battle.prng = new PRNG([0, 0, 0, seedNum]);
 
             let totalPrngCalls = 0;
