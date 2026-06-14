@@ -186,10 +186,16 @@ impl Pokemon {
                 // to ensure current_effect_state is set up correctly
                 // IMPORTANT: Effect must have effect_holder set so with_effect_state can find the volatile state
                 let volatile_effect = battle.make_condition_effect(&volatile_id);
+                // JS: this.battle.singleEvent('Restart', status, this.volatiles[status.id], ...)
+                // Pass the volatile's effect state so onRestart can read/update counter/duration
+                let volatile_state = {
+                    let pokemon = battle.pokemon_at(target_pos.0, target_pos.1).unwrap();
+                    pokemon.volatiles.get(&volatile_id).cloned()
+                };
                 let restart_result = battle.single_event(
                     "Restart",
                     &volatile_effect,
-                    None,
+                    volatile_state,
                     Some(target_pos),
                     source_pos,
                     source_effect_ref,
