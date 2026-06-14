@@ -61,6 +61,17 @@ pub fn on_any_accuracy(battle: &mut Battle, accuracy: i32, target_pos: Option<(u
     }
 
     // return accuracy;
-    EventResult::Number(accuracy)
+    // IMPORTANT: In JS, when a previous handler returned `true` (e.g., another No Guard),
+    // the relay variable is `true`. This handler receives `accuracy = true` and returns it
+    // as `return accuracy` → true. But in Rust, Boolean(true) is converted to i32=0 for
+    // the handler parameter. If accuracy=0 came from Boolean(true), returning Number(0)
+    // would lose the "always hit" semantics. Since accuracy=0 can ONLY come from
+    // Boolean(true) relay conversion (real accuracy is never 0 in normal gameplay),
+    // we preserve it as Boolean(true).
+    if accuracy == 0 {
+        EventResult::Boolean(true)
+    } else {
+        EventResult::Number(accuracy)
+    }
 }
 
