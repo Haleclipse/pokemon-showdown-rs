@@ -225,43 +225,51 @@ impl Pokemon {
                 }
 
                 // JS: if (this.battle.activePerHalf > 1 && !move.tracksTarget) {
-                //       target = this.battle.priorityEvent('RedirectTarget', this, this, move, target);
+                //       const isCharging = move.flags['charge'] && !pokemon.volatiles[move.id] &&
+                //           !(this.hasItem('powerherb') && move.id !== 'skydrop');
+                //       if (!isCharging && !(move.id === 'pursuit' && ...)) {
+                //           target = this.battle.priorityEvent('RedirectTarget', this, this, move, target);
+                //       }
                 //     }
                 if battle.active_per_half > 1 {
-                    // Get move data to check tracksTarget
                     if let Some(move_data) = battle.dex.moves().get(move_id.as_str()) {
                         if !move_data.tracks_target.unwrap_or(false) {
-                            // Encode current target position for relay variable
-                            if let Some((target_side, target_pos)) = target {
-                                let encoded_target = (target_side as i32 * 10) + target_pos as i32;
+                            // Skip RedirectTarget during the charge turn of two-turn moves.
+                            // JS: const isCharging = move.flags['charge'] && !pokemon.volatiles[move.id]
+                            //         && !(this.hasItem('powerherb') && move.id !== 'skydrop');
+                            let is_charging = {
+                                let has_charge_flag = active_move.flags.charge;
+                                let has_move_volatile = battle.pokemon_at(user_pos.0, user_pos.1)
+                                    .map(|p| p.volatiles.contains_key(move_id))
+                                    .unwrap_or(false);
+                                let has_power_herb_non_skydrop = battle.pokemon_at(user_pos.0, user_pos.1)
+                                    .map(|p| p.item.as_str() == "powerherb" && move_id.as_str() != "skydrop")
+                                    .unwrap_or(false);
+                                has_charge_flag && !has_move_volatile && !has_power_herb_non_skydrop
+                            };
 
-                                // Create move effect for RedirectTarget event
-                                let move_effect = battle.make_move_effect(move_id);
-
-                                // Call RedirectTarget priority event
-                                let redirect_result = battle.priority_event(
-                                    "RedirectTarget",
-                                    Some(user_pos),
-                                    Some(user_pos),
-                                    Some(&move_effect),
-                                    EventResult::Number(encoded_target),
-                                );
-
-                                match redirect_result {
-                                    EventResult::Number(new_encoded) => {
-                                        // Decode the new target position (legacy encoding)
-                                        let new_side = (new_encoded / 10) as usize;
-                                        let new_pos = (new_encoded % 10) as usize;
-                                        target = Some((new_side, new_pos));
+                            if !is_charging {
+                                if let Some((target_side, target_pos)) = target {
+                                    let encoded_target = (target_side as i32 * 10) + target_pos as i32;
+                                    let move_effect = battle.make_move_effect(move_id);
+                                    let redirect_result = battle.priority_event(
+                                        "RedirectTarget",
+                                        Some(user_pos),
+                                        Some(user_pos),
+                                        Some(&move_effect),
+                                        EventResult::Number(encoded_target),
+                                    );
+                                    match redirect_result {
+                                        EventResult::Number(new_encoded) => {
+                                            let new_side = (new_encoded / 10) as usize;
+                                            let new_pos = (new_encoded % 10) as usize;
+                                            target = Some((new_side, new_pos));
+                                        }
+                                        EventResult::Position(new_target) => {
+                                            target = Some(new_target);
+                                        }
+                                        _ => {}
                                     }
-                                    // Redirect handlers (Lightning Rod, Storm Drain,
-                                    // Follow Me, Rage Powder) return the new target as
-                                    // a Position - honoring it is what makes the
-                                    // redirection actually happen.
-                                    EventResult::Position(new_target) => {
-                                        target = Some(new_target);
-                                    }
-                                    _ => {}
                                 }
                             }
                         }
