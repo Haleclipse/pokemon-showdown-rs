@@ -415,10 +415,15 @@ impl Battle {
 
                             // JS: const target = this.getTarget(action.pokemon, action.move, action.targetLoc);
                             // JS: if (!target) return false;
-                            // TODO: This getTarget call is needed for PRNG parity in doubles
-                            // but needs careful implementation to avoid regressions. The call
-                            // should use the beforeTurnMove action's targetLoc, and the result
-                            // should be passed to the callback. Skipped for now.
+                            let bt_target = self.get_target(
+                                (side_idx, poke_idx),
+                                &move_id,
+                                target_loc,
+                                move_action.original_target,
+                            );
+                            if bt_target.is_none() {
+                                return;
+                            }
 
                             // Create temporary ActiveMove for the dispatch
                             let temp_active_move = self.dex.get_active_move(move_id.as_str());
