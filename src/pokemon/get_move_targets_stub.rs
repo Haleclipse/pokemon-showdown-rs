@@ -272,8 +272,14 @@ impl Pokemon {
                 //       targets = this.getSmartTargets(target, move);
                 //       target = targets[0];
                 //     }
-                // Smart targeting for Dragon Darts: if target fainted, retarget to adjacent ally
-                if has_smart_target {
+                // Re-read smartTarget from the RUNTIME active move, not the dex.
+                // RedirectTarget handlers (Follow Me, Rage Powder, Lightning Rod,
+                // Storm Drain) clear move.smartTarget so Dragon Darts sends both
+                // hits to the redirected target instead of splitting.
+                let runtime_smart_target = battle.active_move.as_ref()
+                    .map(|m| m.borrow().smart_target.unwrap_or(has_smart_target))
+                    .unwrap_or(has_smart_target);
+                if runtime_smart_target {
                     if let Some((target_side, target_pos)) = target {
                         // Get target's first adjacent ally
                         let target2 = {
