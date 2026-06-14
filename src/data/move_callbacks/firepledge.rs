@@ -112,7 +112,8 @@ pub fn on_prepare_hit(
     // If we found an ally pledge action, prioritize it and add waiting message
     if let Some((ally_side_index, ally_pokemon_index)) = ally_pledge_action {
         // this.queue.prioritizeAction(action, move);
-        battle.queue.prioritize_action(ally_side_index, ally_pokemon_index);
+        let move_effect = battle.make_move_effect(&crate::dex_data::ID::from("firepledge"));
+        battle.queue.prioritize_action_with_source(ally_side_index, ally_pokemon_index, Some(move_effect));
 
         // this.add('-waiting', source, action.pokemon);
         let (source_slot, action_pokemon_slot) = {

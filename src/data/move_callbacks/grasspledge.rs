@@ -130,7 +130,8 @@ pub fn on_prepare_hit(
     if let Some(_action_index) = ally_pledge_action_index {
         // this.queue.prioritizeAction(action, move);
         let ally_pos = ally_pokemon_pos.unwrap();
-        battle.queue.prioritize_action(ally_pos.0, ally_pos.1);
+        let move_effect = battle.make_move_effect(&crate::dex_data::ID::from("grasspledge"));
+        battle.queue.prioritize_action_with_source(ally_pos.0, ally_pos.1, Some(move_effect));
 
         // this.add('-waiting', source, action.pokemon);
         let source_ident = {
