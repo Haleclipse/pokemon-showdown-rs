@@ -129,6 +129,8 @@ pub fn on_update(battle: &mut Battle, pokemon_pos: (usize, usize)) -> EventResul
     }
 
     // if (!ally || pokemon.baseSpecies.baseSpecies !== 'Tatsugiri' || ally.baseSpecies.baseSpecies !== 'Dondozo')
+    // JS: baseSpecies.baseSpecies is the root species name WITHOUT forme
+    // e.g., Tatsugiri-Stretchy → baseSpecies "Tatsugiri"
     let (pokemon_base_species, ally_base_species) = {
         let pokemon = match battle.pokemon_at(pokemon_pos.0, pokemon_pos.1) {
             Some(p) => p,
@@ -138,7 +140,14 @@ pub fn on_update(battle: &mut Battle, pokemon_pos: (usize, usize)) -> EventResul
             Some(p) => p,
             None => return EventResult::Continue,
         };
-        (pokemon.base_species.clone(), ally.base_species.clone())
+        // Look up the base species from the dex (without forme)
+        let p_base = battle.dex.species().get(pokemon.species_id.as_str())
+            .and_then(|s| s.base_species.clone())
+            .unwrap_or_else(|| pokemon.species_id.to_string());
+        let a_base = battle.dex.species().get(ally.species_id.as_str())
+            .and_then(|s| s.base_species.clone())
+            .unwrap_or_else(|| ally.species_id.to_string());
+        (crate::dex_data::ID::from(p_base.as_str()), crate::dex_data::ID::from(a_base.as_str()))
     };
 
     if pokemon_base_species.as_str() != "tatsugiri" || ally_base_species.as_str() != "dondozo" {
