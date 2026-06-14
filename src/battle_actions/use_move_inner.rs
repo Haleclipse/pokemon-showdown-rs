@@ -510,8 +510,16 @@ pub fn use_move_inner(
     // if (baseTarget !== move.target) {
     //     target = this.battle.getRandomTarget(pokemon, move);
     // }
-    debug_elog!("[USE_MOVE_INNER] After ModifyMove: base_target={}, active_move.target={}, target_pos={:?}", base_target, active_move.target, target_pos);
-    if base_target != active_move.target {
+    // In JS, when ModifyMove returns false (e.g., Heal Block blocking a heal move),
+    // `move` becomes false, so `move.target` is undefined. This makes
+    // `baseTarget !== move.target` always true, triggering getRandomTarget.
+    // We replicate this: if ModifyMove returned falsy, the target is considered changed.
+    let move_target_changed = match modify_move_result {
+        EventResult::Boolean(false) | EventResult::Null => true,
+        _ => base_target != active_move.target,
+    };
+    debug_elog!("[USE_MOVE_INNER] After ModifyMove: base_target={}, active_move.target={}, target_pos={:?}, move_target_changed={}", base_target, active_move.target, target_pos, move_target_changed);
+    if move_target_changed {
         debug_elog!("[USE_MOVE_INNER] Target changed! Getting new random target");
         target_pos = battle.get_random_target(pokemon_pos.0, pokemon_pos.1, &active_move.target);
         debug_elog!("[USE_MOVE_INNER] New target_pos={:?}", target_pos);
