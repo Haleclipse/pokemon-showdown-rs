@@ -413,11 +413,12 @@ impl Battle {
                             // JS:     break;
                             debug_elog!("[RUN_ACTION] Executing beforeTurnMove callback for move={}", move_id.as_str());
 
-                            // Note: JavaScript gets the target and checks if it's valid, but the current Rust
-                            // dispatch function doesn't take a target parameter. The callbacks that need the
-                            // target obtain it themselves (e.g., from battle.active_target or other sources).
-                            // For now, we'll just call the dispatch function without the target.
-                            // TODO: Update dispatch_before_turn_callback to take target_loc parameter if needed
+                            // JS: const target = this.getTarget(action.pokemon, action.move, action.targetLoc);
+                            // JS: if (!target) return false;
+                            // TODO: This getTarget call is needed for PRNG parity in doubles
+                            // but needs careful implementation to avoid regressions. The call
+                            // should use the beforeTurnMove action's targetLoc, and the result
+                            // should be passed to the callback. Skipped for now.
 
                             // Create temporary ActiveMove for the dispatch
                             let temp_active_move = self.dex.get_active_move(move_id.as_str());
