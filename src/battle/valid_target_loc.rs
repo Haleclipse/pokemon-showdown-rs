@@ -48,10 +48,9 @@ impl Battle {
         source: (usize, usize),
         target_type: &str,
     ) -> bool {
-        // JS: if (!targetLoc) return false;
-        // targetLoc=0 means no target was chosen — not a valid location
+        // JS: if (targetLoc === 0) return true;
         if target_loc == 0 {
-            return false;
+            return true;
         }
 
         // JS: const numSlots = this.activePerHalf;
