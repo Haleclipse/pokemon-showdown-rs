@@ -239,13 +239,21 @@ impl Pokemon {
                             //         && !(this.hasItem('powerherb') && move.id !== 'skydrop');
                             let is_charging = {
                                 let has_charge_flag = active_move.flags.charge;
-                                let has_move_volatile = battle.pokemon_at(user_pos.0, user_pos.1)
-                                    .map(|p| p.volatiles.contains_key(move_id))
+                                let has_twoturnmove = battle.pokemon_at(user_pos.0, user_pos.1)
+                                    .map(|p| p.volatiles.contains_key(&crate::dex_data::ID::from("twoturnmove")))
                                     .unwrap_or(false);
+                                let weather = battle.effective_weather();
+                                let weather_str = weather.as_str();
+                                let solar_in_sun = move_id.as_str().starts_with("solarb")
+                                    && (weather_str == "sunnyday" || weather_str == "desolateland");
+                                let electroshot_in_rain = move_id.as_str() == "electroshot"
+                                    && (weather_str == "raindance" || weather_str == "primordialsea");
                                 let has_power_herb_non_skydrop = battle.pokemon_at(user_pos.0, user_pos.1)
                                     .map(|p| p.item.as_str() == "powerherb" && move_id.as_str() != "skydrop")
                                     .unwrap_or(false);
-                                has_charge_flag && !has_move_volatile && !has_power_herb_non_skydrop
+                                has_charge_flag && !has_twoturnmove
+                                    && !solar_in_sun && !electroshot_in_rain
+                                    && !has_power_herb_non_skydrop
                             };
 
                             if !is_charging {
