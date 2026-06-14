@@ -15,7 +15,7 @@ use crate::event::EventResult;
 ///         target.addVolatile('confusion');
 ///     }
 /// }
-pub fn on_any_after_set_status(battle: &mut Battle, status: Option<&str>, target_pos: Option<(usize, usize)>, source_pos: Option<(usize, usize)>, _effect: Option<&Effect>) -> EventResult {
+pub fn on_any_after_set_status(battle: &mut Battle, status: Option<&str>, target_pos: Option<(usize, usize)>, source_pos: Option<(usize, usize)>, effect: Option<&Effect>) -> EventResult {
     use crate::dex_data::ID;
     use crate::Pokemon;
 
@@ -63,19 +63,18 @@ pub fn on_any_after_set_status(battle: &mut Battle, status: Option<&str>, target
     }
 
     // Check if effect is a Move - JavaScript: effect.effectType !== 'Move'
-    // JavaScript passes effect as a parameter with effectType property
-    // We check the effect from battle.event which has the effect_type field
-    // NOTE: Just checking if effect_id exists in dex.moves() is insufficient because
-    // some moves (like Baneful Bunker) have embedded conditions with the same ID.
-    // When the condition triggers set_status, the effect IS the condition, not the move.
-    let is_move_effect = if let Some(ref event) = battle.event {
-        if let Some(ref effect) = event.effect {
-            effect.effect_type == crate::battle::EffectType::Move
-        } else {
+    // Use the PASSED effect parameter, not battle.event — battle.event may
+    // contain a stale Move effect from a previous action, while the parameter
+    // has the actual cause (e.g. Toxic Spikes = Condition, not Move).
+    let is_move_effect = match effect {
+        Some(e) => {
+            debug_elog!("[POISON_PUPPETEER] effect passed: id={}, effect_type={:?}", e.as_str(), e.effect_type);
+            e.effect_type == crate::battle::EffectType::Move
+        }
+        None => {
+            debug_elog!("[POISON_PUPPETEER] no effect passed, checking battle.event");
             false
         }
-    } else {
-        false
     };
 
     if !is_move_effect {
