@@ -64,19 +64,19 @@ pub mod condition {
         target_pos: (usize, usize),
         _move_id: Option<&str>,
     ) -> EventResult {
-        // Get move data from battle context
-        let move_id = match &battle.active_move {
-            Some(active_move) => active_move.borrow().id.clone(),
-            None => return EventResult::Continue,
-        };
-
-        let move_data = match battle.dex.moves().get_by_id(&move_id) {
-            Some(m) => m,
+        // Read target/category from the RUNTIME active move, not the dex.
+        // Moves like Curse change target dynamically (onModifyMove sets
+        // target="self" for non-Ghost users). Dex target is "normal".
+        let (move_target, move_category) = match &battle.active_move {
+            Some(active_move) => {
+                let am = active_move.borrow();
+                (am.target.clone(), am.category.clone())
+            }
             None => return EventResult::Continue,
         };
 
         // if (['self', 'all'].includes(move.target) || move.category !== 'Status') return;
-        if move_data.target == "self" || move_data.target == "all" || move_data.category != "Status"
+        if move_target == "self" || move_target == "all" || move_category != "Status"
         {
             return EventResult::Continue;
         }
