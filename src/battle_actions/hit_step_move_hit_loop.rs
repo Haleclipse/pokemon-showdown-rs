@@ -430,9 +430,6 @@ pub fn hit_step_move_hit_loop(
                     // }
                     if active_move.always_hit {
                         true
-                    } else if modified_acc == 0 {
-                        // 0 in our system represents "true" (always hit)
-                        true
                     } else {
                         battle.random_chance(modified_acc as f64, 100)
                     }
