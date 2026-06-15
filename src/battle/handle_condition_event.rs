@@ -111,6 +111,7 @@ impl Battle {
                 }
                 let accuracy = match &relay_var {
                     Some(EventResult::Number(n)) => *n,
+                    Some(EventResult::Float(f)) => *f as i32,
                     _ => 0
                 };
                 let source_pos = self.event.as_ref().and_then(|e| e.source);
@@ -134,6 +135,7 @@ impl Battle {
                 let relay_var = self.event.as_ref().and_then(|e| e.relay_var.clone());
                 let accuracy = match &relay_var {
                     Some(EventResult::Number(n)) => *n,
+                    Some(EventResult::Float(f)) => *f as i32,
                     _ => 0
                 };
                 let target_pos = self.event.as_ref().and_then(|e| e.target);

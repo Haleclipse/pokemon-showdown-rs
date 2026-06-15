@@ -98,6 +98,7 @@ impl Battle {
         let (relay_var_int, _relay_var_float, relay_var_boost, relay_var_string) = if let Some(ref event) = self.event {
             let relay_int = match &event.relay_var {
                 Some(EventResult::Number(n)) => *n,
+                Some(EventResult::Float(f)) => *f as i32,
                 _ => 0,
             };
             let relay_float = match &event.relay_var {
