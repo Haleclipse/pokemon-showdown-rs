@@ -1032,7 +1032,8 @@ impl Battle {
                         self.speed_order = all_active_with_speeds
                             .iter()
                             .map(|((s_idx, p_idx), _speed)| {
-                                s_idx * self.sides.len() + p_idx
+                                let pos = self.sides[*s_idx].pokemon[*p_idx].position;
+                                s_idx * self.sides.len() + pos
                             })
                             .collect();
 
