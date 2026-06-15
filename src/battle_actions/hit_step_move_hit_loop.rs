@@ -500,9 +500,12 @@ pub fn hit_step_move_hit_loop(
                 DamageResult::Damage(d) => *d,
                 _ => 0,
             };
-            if i < damage.len() {
-                damage[i] = DamageResult::Damage(dmg);
+            // JS arrays auto-extend: damage[i] = ... creates entries for any i.
+            // Rust Vec needs explicit extension to match.
+            while damage.len() <= i {
+                damage.push(DamageResult::Damage(0));
             }
+            damage[i] = DamageResult::Damage(dmg);
             active_move.total_damage += dmg;
         }
 
