@@ -600,9 +600,29 @@ pub fn run_move_effects<'a>(
                         did_something = combine_results(did_something, hit_result.into());
                     } else {
                         //         hitResult = this.battle.singleEvent('Hit', moveData, {}, target, source, move);
+                        // For secondary effects, JS passes the secondary data object
+                        // as the effect parameter to singleEvent. This plain object
+                        // has NO effectType property, so battle.effect.effectType is
+                        // undefined during the callback. Code that checks
+                        // effectType === 'Move' (e.g. Poison Puppeteer) must see
+                        // a non-Move type. Use Condition (default) for secondaries.
+                        let secondary_hit_effect;
+                        let hit_effect_ref = if is_secondary {
+                            secondary_hit_effect = crate::battle::Effect {
+                                id: callback_effect.id.clone(),
+                                name: callback_effect.name.clone(),
+                                effect_type: crate::battle::EffectType::Condition,
+                                effect_holder: None,
+                                side_index: None,
+                                prankster_boosted: false,
+                            };
+                            &secondary_hit_effect
+                        } else {
+                            callback_effect
+                        };
                         let hit_result = battle.single_event(
                             "Hit",
-                            callback_effect,
+                            hit_effect_ref,
                             None,
                             Some(target_pos),
                             Some(source_pos),
