@@ -28,15 +28,11 @@ use crate::event::EventResult;
 pub fn on_hit(
     battle: &mut Battle,
     pokemon_pos: (usize, usize),
-    target_pos: Option<(usize, usize)>,
+    _source_pos: Option<(usize, usize)>,
 ) -> EventResult {
-    // Get the target pokemon
-    let target = match target_pos {
-        Some(pos) => pos,
-        None => return EventResult::Continue,
-    };
-
-    let target_pokemon = match battle.pokemon_at(target.0, target.1) {
+    // JS: onHit(target) — pokemon_pos IS the target (the ally getting the boost)
+    // _source_pos is the move user (passed as source by dispatch)
+    let target_pokemon = match battle.pokemon_at(pokemon_pos.0, pokemon_pos.1) {
         Some(p) => p,
         None => return EventResult::Continue,
     };
@@ -66,6 +62,7 @@ pub fn on_hit(
         // const boost: SparseBoostsTable = {};
         // boost[randomStat] = 2;
         // this.boost(boost);
+        // JS: this.boost(boost) — no explicit target/source, uses event context
         let boost_name = match random_stat {
             BoostID::Atk => "atk",
             BoostID::Def => "def",
@@ -75,7 +72,7 @@ pub fn on_hit(
             BoostID::Accuracy => "accuracy",
             BoostID::Evasion => "evasion",
         };
-        battle.boost(&[(boost_name, 2)], target, Some(pokemon_pos), None, false, false);
+        battle.boost(&[(boost_name, 2)], pokemon_pos, _source_pos, None, false, false);
 
         EventResult::Continue
     } else {
