@@ -19,6 +19,7 @@ impl Side {
             .collect();
 
         let pokemon_left = pokemon.len();
+        let pokemon_order: Vec<usize> = (0..pokemon.len()).collect();
         let slot_conditions = (0..active_count).map(|_| HashMap::new()).collect();
 
         Self {
@@ -29,6 +30,7 @@ impl Side {
             team,
             pokemon,
             active: vec![None; active_count],
+            pokemon_order,
             pokemon_left,
             z_move_used: false,
             dynamax_used: false,
