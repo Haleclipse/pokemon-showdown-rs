@@ -1177,8 +1177,9 @@ impl Battle {
             self.each_event("Update", None, None);
 
             // Check if any residual pokemon dropped below 50% HP and trigger Emergency Exit
-            // Take ownership of residual_pokemon to avoid borrow issues
-            let residual_pokemon = std::mem::take(&mut self.residual_pokemon);
+            // Clone to avoid borrow issues — JS keeps residualPokemon across actions
+            // (it's a `let` in the function scope, not cleared between actions)
+            let residual_pokemon = self.residual_pokemon.clone();
             for (side_idx, poke_idx, original_hp) in residual_pokemon {
                 let (current_hp, max_hp) = {
                     if let Some(pokemon) = self.pokemon_at(side_idx, poke_idx) {
