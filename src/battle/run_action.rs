@@ -587,19 +587,12 @@ impl Battle {
                     }
 
                     // JS: action.pokemon.side.removeSlotCondition(action.pokemon, 'revivalblessing');
-                    // The poke_idx here is the ACTIVE position index, not the team array index
-                    // We need to look up the team array index first
-                    let user_team_idx = if let Some(side) = self.sides.get(side_idx) {
-                        if let Some(&Some(team_idx)) = side.active.get(poke_idx) {
-                            team_idx
-                        } else {
-                            poke_idx // Fallback
-                        }
-                    } else {
-                        poke_idx
-                    };
+                    // poke_idx is already the PARTY INDEX (resolved from active slot
+                    // during add_choice.rs). Use it directly to find the Pokemon's
+                    // position (active slot). Do NOT use it as an active slot index
+                    // to look up side.active — that was the previous bug.
                     let user_position = if let Some(side) = self.sides.get(side_idx) {
-                        if let Some(pokemon) = side.pokemon.get(user_team_idx) {
+                        if let Some(pokemon) = side.pokemon.get(poke_idx) {
                             pokemon.position
                         } else {
                             0
