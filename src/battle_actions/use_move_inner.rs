@@ -514,14 +514,19 @@ pub fn use_move_inner(
     // `move` becomes false, so `move.target` is undefined. This makes
     // `baseTarget !== move.target` always true, triggering getRandomTarget.
     // We replicate this: if ModifyMove returned falsy, the target is considered changed.
-    let move_target_changed = match modify_move_result {
-        EventResult::Boolean(false) | EventResult::Null => true,
-        _ => base_target != active_move.target,
+    // In JS, when ModifyMove returns false, `move` becomes false and `move.target`
+    // is undefined. `baseTarget !== move.target` is always true (string !== undefined).
+    // getRandomTarget(pokemon, false) calls dex.moves.get(false) which returns a
+    // default move with target="normal", so it goes through randomFoe (consuming PRNG).
+    // We replicate this by using "normal" as the target type when ModifyMove returns falsy.
+    let (move_target_changed, retarget_type) = match modify_move_result {
+        EventResult::Boolean(false) | EventResult::Null => (true, "normal".to_string()),
+        _ => (base_target != active_move.target, active_move.target.clone()),
     };
     debug_elog!("[USE_MOVE_INNER] After ModifyMove: base_target={}, active_move.target={}, target_pos={:?}, move_target_changed={}", base_target, active_move.target, target_pos, move_target_changed);
     if move_target_changed {
-        debug_elog!("[USE_MOVE_INNER] Target changed! Getting new random target");
-        target_pos = battle.get_random_target(pokemon_pos.0, pokemon_pos.1, &active_move.target);
+        debug_elog!("[USE_MOVE_INNER] Target changed! Getting new random target with type={}", retarget_type);
+        target_pos = battle.get_random_target(pokemon_pos.0, pokemon_pos.1, &retarget_type);
         debug_elog!("[USE_MOVE_INNER] New target_pos={:?}", target_pos);
     }
 
