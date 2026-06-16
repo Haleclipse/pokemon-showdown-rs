@@ -245,13 +245,6 @@ pub struct Side {
     /// TODO: Rust uses Option<usize> indices instead of Pokemon references due to ownership
     pub active: Vec<Option<usize>>,
 
-    /// Tracks the JS physical array order of side.pokemon.
-    /// In JS, switchIn physically swaps side.pokemon[pos] and side.pokemon[oldPos],
-    /// maintaining pokemon[i].position == i. Rust doesn't do this swap, but code that
-    /// iterates side.pokemon (Assist, etc.) needs to see the JS order. This vector maps
-    /// JS array index → Rust array index: pokemon_order[js_idx] = rust_idx.
-    pub pokemon_order: Vec<usize>,
-
     /// Number of Pokemon left (not fainted)
     /// JavaScript: pokemonLeft: number
     pub pokemon_left: usize,

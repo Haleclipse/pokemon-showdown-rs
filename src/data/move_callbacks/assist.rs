@@ -42,17 +42,27 @@ pub fn on_hit(
     let mut moves: Vec<ID> = Vec::new();
 
     // for (const pokemon of target.side.pokemon) {
-    // In JavaScript, side.pokemon is physically reordered during switchIn.
-    // We use pokemon_order to iterate in JS's physical array order.
+    // In JavaScript, side.pokemon is reordered when switching so that iterating it
+    // gives pokemon in position order. In Rust, we keep the original array order but
+    // track position separately. We need to iterate in position order to match JS.
     let target_side_idx = target.0;
-    let target_poke_idx = target.1;
-    let pokemon_order = battle.sides[target_side_idx].pokemon_order.clone();
+    let num_pokemon = battle.sides[target_side_idx].pokemon.len();
 
-    for &poke_idx in &pokemon_order {
+    // Get the target's position (from position field, not array index)
+    let target_position = battle.sides[target_side_idx].pokemon[target.1].position;
+
+    // Collect (array_index, position) pairs and sort by position
+    let mut pokemon_by_position: Vec<(usize, usize)> = (0..num_pokemon)
+        .map(|idx| (idx, battle.sides[target_side_idx].pokemon[idx].position))
+        .collect();
+    pokemon_by_position.sort_by_key(|&(_, pos)| pos);
+
+    // Iterate in position order
+    for (poke_idx, poke_position) in pokemon_by_position {
         // if (pokemon === target) continue;
-        // In JS, this is an identity check on the Pokemon object.
-        // In Rust, we compare array indices since each index is unique.
-        if poke_idx == target_poke_idx {
+        // In JS, this compares pokemon objects. Since we're iterating by position,
+        // we need to skip the pokemon at the target's position.
+        if poke_position == target_position {
             continue;
         }
 

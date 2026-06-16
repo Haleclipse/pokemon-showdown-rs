@@ -416,13 +416,9 @@ pub fn switch_in(
 
         // Update position (without swapping the array)
         // Note: JavaScript swaps pokemon in the array, but we don't to avoid breaking index references.
-        // Instead, we update position fields and pokemon_order to track JS's physical array order.
+        // Instead, we just update the position fields and fix iteration order in move callbacks like Assist.
         let new_position = pos;
         battle.sides[side_index].pokemon[pokemon_index].position = new_position;
-
-        // Track JS physical swap in pokemon_order: swap entries at pos and old_position
-        // JS does: side.pokemon[pos] = newPokemon; side.pokemon[oldPos] = oldPokemon;
-        battle.sides[side_index].pokemon_order.swap(pos, old_position);
     } else {
         // No old active (e.g., previous Pokemon fainted)
         // Still need to set the new Pokemon's position
