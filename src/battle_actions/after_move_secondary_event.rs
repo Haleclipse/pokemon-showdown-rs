@@ -53,11 +53,10 @@ pub fn after_move_secondary_event(
         }
 
         //     this.battle.runEvent('AfterMoveSecondary', targets, pokemon, move);
-        // Note: runEvent in JavaScript takes targets array, but Rust version takes single target
-        // We need to fire the event for each target
-        for &target in targets {
-            battle.run_event("AfterMoveSecondary", Some(crate::event::EventTarget::Pokemon(target)), Some(attacker_pos), Some(&move_effect), EventResult::Continue, false, false);
-        }
+        // JS passes the targets ARRAY to runEvent. All targets' handlers are collected
+        // into a single list and speed-sorted together (producing shuffle PRNG calls).
+        let targets_vec: Vec<(usize, usize)> = targets.to_vec();
+        battle.run_event("AfterMoveSecondary", Some(crate::event::EventTarget::Pokemons(targets_vec)), Some(attacker_pos), Some(&move_effect), EventResult::Continue, false, false);
     }
 
     // return undefined;

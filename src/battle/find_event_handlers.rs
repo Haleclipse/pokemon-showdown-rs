@@ -87,6 +87,22 @@ impl Battle {
         target: Option<&EventTarget>,
         source: Option<(usize, usize)>,
     ) -> Vec<EventListener> {
+        // JS: if (Array.isArray(target)) { ... recursively collect from each pokemon ... }
+        if let Some(EventTarget::Pokemons(positions)) = target {
+            let mut handlers = Vec::new();
+            let positions_clone = positions.clone();
+            for (i, pos) in positions_clone.iter().enumerate() {
+                let single_target = EventTarget::Pokemon(*pos);
+                let mut cur_handlers = self.find_event_handlers(event_id, Some(&single_target), source);
+                for handler in &mut cur_handlers {
+                    handler.target = Some(*pos);
+                    handler.index = Some(i);
+                }
+                handlers.extend(cur_handlers);
+            }
+            return handlers;
+        }
+
         let mut handlers = Vec::new();
 
         // JavaScript: const prefixedHandlers = !['BeforeTurn', 'Update', 'Weather', 'WeatherChange', 'TerrainChange'].includes(eventName);
