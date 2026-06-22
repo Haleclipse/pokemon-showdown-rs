@@ -50,23 +50,26 @@ pub fn on_hit(
     // let success = false;
     let mut success = false;
 
-    // Get the target position
-    let target = match target_pos {
+    // JS: const allies = [...target.side.pokemon, ...target.side.allySide?.pokemon || []];
+    // In JS onHit(target), `target` is the move's target. For allyTeam moves, target = source.
+    // The `source` parameter (second arg to onHit) is the move user.
+    // The `ally !== source` check compares against the SOURCE (move user), not target.
+    let source = match target_pos {
         Some(pos) => pos,
         None => return EventResult::Continue,
     };
 
-    // const allies = [...target.side.pokemon, ...target.side.allySide?.pokemon || []];
-    // For now, just iterate through target.side.pokemon (allySide not yet implemented)
-    let target_side_idx = target.0;
-    let num_pokemon = battle.sides[target_side_idx].pokemon.len();
+    // Use the source's side for iteration (source = move user = Goodra)
+    let source_side_idx = source.0;
+    let num_pokemon = battle.sides[source_side_idx].pokemon.len();
 
     // for (const ally of allies) {
     for ally_idx in 0..num_pokemon {
-        let ally_pos = (target_side_idx, ally_idx);
+        let ally_pos = (source_side_idx, ally_idx);
 
         // if (ally !== source && !this.suppressingAbility(ally)) {
-        let is_source = ally_pos == pokemon_pos;
+        // JS compares against `source` (the move user), not `target`
+        let is_source = ally_pos == source;
         let is_suppressing = battle.suppressing_ability(Some(ally_pos));
 
         if !is_source && !is_suppressing {
