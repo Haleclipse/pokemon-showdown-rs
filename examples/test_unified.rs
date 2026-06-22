@@ -33,16 +33,22 @@ fn run_battle_inner(seed_num: u32, dex: &Dex) -> String {
     let format_str = std::env::var("PS_FORMAT").unwrap_or_else(|_| "gen9randombattle".to_string());
     // Split format string at @@@ to separate format ID from custom rules
     // e.g. "gen9doublescustomgame@@@!Team Preview" → format_id="gen9doublescustomgame"
-    let format_id = format_str.split("@@@").next().unwrap_or(&format_str);
+    let parts: Vec<&str> = format_str.split("@@@").collect();
+    let format_id = parts[0];
     let game_type = if format_id.contains("doubles") {
         Some(pokemon_showdown::dex_data::GameType::Doubles)
     } else {
         None
     };
+    // Parse custom rules: !RuleName = ban (disable) rule
+    let no_team_preview = parts.get(1)
+        .map(|rules| rules.contains("!Team Preview"))
+        .unwrap_or(false);
     let mut battle = Battle::new(BattleOptions {
         format_id: ID::new(format_id),
         seed: Some(PRNGSeed::Gen5([0, 0, 0, seed_num])),
         game_type,
+        no_team_preview,
         p1: Some(PlayerOptions {
             name: "Player 1".to_string(),
             team: TeamFormat::Sets(team1),
@@ -59,6 +65,7 @@ fn run_battle_inner(seed_num: u32, dex: &Dex) -> String {
         }),
         ..Default::default()
     });
+
 
     // Check verbose mode: VERBOSE_SEED=N outputs turn-by-turn for that seed
     let verbose = std::env::var("VERBOSE_SEED")

@@ -45,4 +45,6 @@ pub struct BattleOptions {
     /// Player 4 options (multi battles)
     /// JavaScript: p4?: PlayerOptions
     pub p4: Option<PlayerOptions>,
+    /// Disable Team Preview (equivalent to @@@!Team Preview rule)
+    pub no_team_preview: bool,
 }

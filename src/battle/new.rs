@@ -42,7 +42,12 @@ impl Battle {
             let format = Format::from_def(format_def);
             // Create DexFormats and get the rule table
             let dex_formats = DexFormats::new();
-            Some(dex_formats.get_rule_table(&format))
+            let mut rt = dex_formats.get_rule_table(&format);
+            // Apply !Team Preview rule if set
+            if options.no_team_preview {
+                rt.picked_team_size = None;
+            }
+            Some(rt)
         } else {
             None
         };
