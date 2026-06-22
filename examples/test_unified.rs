@@ -28,6 +28,7 @@ fn run_battle_inner(seed_num: u32, dex: &Dex) -> String {
     let team1 = team_generator::generate_random_team(&mut prng, dex);
     let team2 = team_generator::generate_random_team(&mut prng, dex);
 
+
     // Create battle with fresh PRNG (same seed)
     let format_str = std::env::var("PS_FORMAT").unwrap_or_else(|_| "gen9randombattle".to_string());
     // Split format string at @@@ to separate format ID from custom rules
