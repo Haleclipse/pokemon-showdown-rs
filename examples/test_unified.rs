@@ -59,9 +59,42 @@ fn run_battle_inner(seed_num: u32, dex: &Dex) -> String {
         ..Default::default()
     });
 
+    // Check verbose mode: VERBOSE_SEED=N outputs turn-by-turn for that seed
+    let verbose = std::env::var("VERBOSE_SEED")
+        .ok()
+        .and_then(|s| s.parse::<u32>().ok())
+        .map(|v| v == seed_num)
+        .unwrap_or(false);
+
     // Run battle for up to 100 turns
     for i in 1..=100 {
+        let prng_before = battle.prng.call_count;
         battle.make_choices(&["default", "default"]);
+        let prng_after = battle.prng.call_count;
+
+        if verbose {
+            let p1: Vec<String> = battle.sides[0].active.iter().map(|slot| {
+                match slot {
+                    Some(idx) => {
+                        let p = &battle.sides[0].pokemon[*idx];
+                        format!("{}({}/{})", p.name, p.hp, p.maxhp)
+                    }
+                    None => "none".to_string(),
+                }
+            }).collect();
+            let p2: Vec<String> = battle.sides[1].active.iter().map(|slot| {
+                match slot {
+                    Some(idx) => {
+                        let p = &battle.sides[1].pokemon[*idx];
+                        format!("{}({}/{})", p.name, p.hp, p.maxhp)
+                    }
+                    None => "none".to_string(),
+                }
+            }).collect();
+            eprintln!("#{}: turn={}, prng={}->{}, P1=[{}], P2=[{}]",
+                i, battle.turn, prng_before, prng_after,
+                p1.join(", "), p2.join(", "));
+        }
 
         // Reset log position to prevent "LINE LIMIT EXCEEDED" check from failing
         battle.sent_log_pos = battle.log.len();

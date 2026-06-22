@@ -91,10 +91,13 @@ if (isMainThread) {
     for (const seedNum of seeds) {
         try {
             const prng = new PRNG([0, 0, 0, seedNum]);
-            const team1 = generateRandomTeam(prng, allSpecies, allMoves, allItems, allNatures, Dex);
-            const team2 = generateRandomTeam(prng, allSpecies, allMoves, allItems, allNatures, Dex);
+            // JSON roundtrip strips prototype properties from raw Pokedex species objects,
+            // ensuring team data matches what Rust sees (only explicit fields, no prototypes).
+            const team1 = JSON.parse(JSON.stringify(generateRandomTeam(prng, allSpecies, allMoves, allItems, allNatures, Dex)));
+            const team2 = JSON.parse(JSON.stringify(generateRandomTeam(prng, allSpecies, allMoves, allItems, allNatures, Dex)));
 
-            const battle = new Battle({formatid: process.env.PS_FORMAT || 'gen9randombattle'});
+            const fmt = process.env.PS_FORMAT || 'gen9randombattle';
+            const battle = new Battle({formatid: fmt});
             battle.prng = new PRNG([0, 0, 0, seedNum]);
 
             let totalPrngCalls = 0;
@@ -107,8 +110,20 @@ if (isMainThread) {
             battle.setPlayer('p1', {name: 'Player 1', team: team1});
             battle.setPlayer('p2', {name: 'Player 2', team: team2});
 
+            const verboseSeed = parseInt(process.env.VERBOSE_SEED) || 0;
+
             for (let i = 1; i <= 100; i++) {
+                const prngBefore = totalPrngCalls;
                 battle.makeChoices('default', 'default');
+
+                if (verboseSeed === seedNum) {
+                    const p1 = battle.sides[0].active
+                        .map(p => p ? `${p.name}(${p.hp}/${p.maxhp})` : 'none').join(', ');
+                    const p2 = battle.sides[1].active
+                        .map(p => p ? `${p.name}(${p.hp}/${p.maxhp})` : 'none').join(', ');
+                    console.error(`#${i}: turn=${battle.turn}, prng=${prngBefore}->${totalPrngCalls}, P1=[${p1}], P2=[${p2}]`);
+                }
+
                 if (battle.ended || i >= 100) break;
             }
 
