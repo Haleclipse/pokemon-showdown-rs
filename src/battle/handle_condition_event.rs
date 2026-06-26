@@ -264,7 +264,7 @@ impl Battle {
                 let target_pos = self.event.as_ref().and_then(|e| e.target).unwrap_or(pokemon_pos);
                 condition_callbacks::dispatch_on_foe_disable_move(self, condition_id, target_pos)
             }
-            "DragOut" => {
+            "DragOut" | "AnyDragOut" => {
                 // Extract source from event and move_id from active_move
                 let source_pos = self.event.as_ref().and_then(|e| e.source);
                 let _move_id = self.active_move.as_ref()
