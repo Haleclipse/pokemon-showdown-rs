@@ -74,14 +74,14 @@ pub fn force_switch(
                         //         damage[i] = false;
                         //     }
                         debug_elog!("[FORCE_SWITCH] hit_result={:?}", hit_result);
-                        if !matches!(hit_result, EventResult::Null | EventResult::Continue) && !matches!(hit_result, EventResult::Number(0)) {
+                        if !matches!(hit_result, EventResult::Null | EventResult::Continue) && !matches!(hit_result, EventResult::Number(0)) && !matches!(hit_result, EventResult::Boolean(false)) {
                             // hitResult is truthy (not None, not 0)
                             debug_elog!("[FORCE_SWITCH] Setting force_switch_flag=true for target {:?}", target_pos);
                             if let Some(target_pokemon) = battle.pokemon_at_mut(target_pos.0, target_pos.1) {
                                 target_pokemon.force_switch_flag = true;
                                 debug_elog!("[FORCE_SWITCH] Successfully set force_switch_flag");
                             }
-                        } else if matches!(hit_result, EventResult::Number(0)) && active_move.category == "Status" {
+                        } else if matches!(hit_result, EventResult::Boolean(false)) && active_move.category == "Status" {
                             // hitResult is false (0)
                             // Get source pokemon for add message
                             if let Some(source_pokemon) = battle.pokemon_at(source_pos.0, source_pos.1) {
