@@ -127,6 +127,10 @@ if (isMainThread) {
                 if (battle.ended || i >= 100) break;
             }
 
+            if (verboseSeed === seedNum) {
+                require('fs').writeFileSync(`/tmp/js${seedNum}-battlelog.txt`, battle.log.join('\n'));
+            }
+
             let winner = 'none';
             if (battle.winner === 'Player 1') winner = 'p1';
             else if (battle.winner === 'Player 2') winner = 'p2';

@@ -435,13 +435,18 @@ impl Battle {
                     event_effect.as_ref(),
                 )
             }
-            "AnyTryPrimaryHit" => ability_callbacks::dispatch_on_any_try_primary_hit(
-                self,
-                ability_id.as_str(),
-                Some(pokemon_pos),
-                event_source_pos,
-                active_move_clone.as_ref(),
-            ),
+            "AnyTryPrimaryHit" => {
+                // JavaScript: onAnyTryPrimaryHit(target, source, move) - target is the target of
+                // the TryPrimaryHit event (the Pokemon being hit), NOT the effect holder
+                let target_pos = self.event.as_ref().and_then(|e| e.target).or(Some(pokemon_pos));
+                ability_callbacks::dispatch_on_any_try_primary_hit(
+                    self,
+                    ability_id.as_str(),
+                    target_pos,
+                    event_source_pos,
+                    active_move_clone.as_ref(),
+                )
+            }
             "BasePower" => {
                 // BasePower is called via run_event, so attacker is in event.target, defender is in event.source
                 let attacker_pos = self.event.as_ref().and_then(|e| e.target).unwrap_or((0, 0));
