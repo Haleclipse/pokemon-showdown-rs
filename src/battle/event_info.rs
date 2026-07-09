@@ -41,6 +41,13 @@ pub struct EventInfo {
     /// JavaScript: type parameter in runEvent('Effectiveness', this, type, move, typeMod)
     /// Used to pass the defender type being checked for type effectiveness
     pub type_param: Option<String>,
+    /// The ActiveMove instance the event's sourceEffect refers to, snapshotted when the
+    /// event starts. JavaScript passes the move OBJECT through the event args, so handlers
+    /// keep seeing the original move even if a nested useMove (e.g. Magic Bounce's
+    /// reflected copy) replaces battle.activeMove mid-event. Shared (Rc) with the
+    /// original, so runtime mutations remain visible, matching JS aliasing.
+    #[serde(skip)]
+    pub source_move: Option<crate::battle_actions::SharedActiveMove>,
 }
 
 impl EventInfo {
@@ -53,6 +60,7 @@ impl EventInfo {
             modifier: 4096,
             relay_var: None,
             type_param: None,
+            source_move: None,
         }
     }
 }
@@ -67,6 +75,7 @@ impl Default for EventInfo {
             modifier: 4096,
             relay_var: None,
             type_param: None,
+            source_move: None,
         }
     }
 }

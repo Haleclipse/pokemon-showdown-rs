@@ -307,6 +307,9 @@ impl Battle {
             modifier: 4096,
             relay_var: relay_var.clone(),
             type_param: preserved_type_param,
+            // singleEvent dispatch resolves the move via battle.active_move (old behavior);
+            // only runEvent snapshots the move instance for its handler loop
+            source_move: None,
         });
         self.event_depth += 1;
 

@@ -21,8 +21,14 @@ impl Battle {
         use crate::data::condition_callbacks;
         use crate::event::EventResult;
 
-        // Clone active_move (extract from SharedActiveMove) to avoid borrow issues
-        let active_move_clone: Option<crate::battle_actions::ActiveMove> = self.active_move.as_ref().map(|am| am.borrow().clone());
+        // Clone active_move (extract from SharedActiveMove) to avoid borrow issues.
+        // Prefer the event's snapshotted move instance: JS passes the move OBJECT through
+        // the event args, so handlers still see the original move even if a nested useMove
+        // (e.g. a Magic Bounce/Coat reflection of the same move id) replaced battle.active_move.
+        let active_move_clone: Option<crate::battle_actions::ActiveMove> = self.event.as_ref()
+            .and_then(|e| e.source_move.as_ref())
+            .map(|am| am.borrow().clone())
+            .or_else(|| self.active_move.as_ref().map(|am| am.borrow().clone()));
 
         // Extract pokemon position from EventTarget
         // If target is None (for field handlers), fall back to event.target

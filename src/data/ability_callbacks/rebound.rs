@@ -47,16 +47,12 @@ pub fn on_try_hit(battle: &mut Battle, target_pos: (usize, usize), source_pos: (
         return EventResult::Continue;
     }
 
-    let (has_bounced, is_reflectable, target_semi_invulnerable) = {
-        let active_move = match &battle.active_move {
-            Some(m) => m,
-            None => return EventResult::Continue,
-        };
-
-        let target_semi_invuln = Pokemon::is_semi_invulnerable(battle, target_pos);
-
-        (active_move.borrow().has_bounced, active_move.borrow().flags.reflectable, target_semi_invuln)
+    // JS reads `move` from the event args (the move being bounced), not battle.activeMove
+    let (has_bounced, is_reflectable) = match active_move {
+        Some(m) => (m.has_bounced, m.flags.reflectable),
+        None => return EventResult::Continue,
     };
+    let target_semi_invulnerable = Pokemon::is_semi_invulnerable(battle, target_pos);
 
     if has_bounced || !is_reflectable || target_semi_invulnerable {
         return EventResult::Continue;
@@ -65,26 +61,18 @@ pub fn on_try_hit(battle: &mut Battle, target_pos: (usize, usize), source_pos: (
     // const newMove = this.dex.getActiveMove(move.id);
     // newMove.hasBounced = true;
     // newMove.pranksterBoosted = false;
-    // Set has_bounced and pranksterBoosted = false on current active move
-    if let Some(ref active_move) = battle.active_move {
-        active_move.borrow_mut().has_bounced = true;
-        active_move.borrow_mut().prankster_boosted = false;
-    }
-
     // this.actions.useMove(newMove, target, { target: source });
-    // Reflect the move: Rebound holder (target) uses the move against the original source
+    // The flags go on the NEW move only; the original move stays unbounced.
     let move_data = match battle.dex.moves().get(&move_id).cloned() {
         Some(m) => m,
         None => return EventResult::Continue,
     };
-    crate::battle_actions::use_move(
-        battle,
+    battle.use_move_with_bounced(
         &move_data,
         target_pos,        // Rebound holder becomes the user
         Some(source_pos),  // Original source becomes the target
-        None,              // No source effect
-        None,              // Not a Z-move
-        None,              // Not a Max move
+        true,
+        false,
     );
 
     // return null;
@@ -143,29 +131,15 @@ pub fn on_ally_try_hit_side(battle: &mut Battle, target_pos: Option<(usize, usiz
         return EventResult::Continue;
     }
 
-    let (has_bounced, is_reflectable, target_semi_invulnerable) = {
-        let active_move = match &battle.active_move {
-            Some(m) => m,
-            None => return EventResult::Continue,
-        };
-
-        let target_semi_invuln = Pokemon::is_semi_invulnerable(battle, target);
-
-        (active_move.borrow().has_bounced, active_move.borrow().flags.reflectable, target_semi_invuln)
+    // JS reads `move` from the event args (the move being bounced), not battle.activeMove
+    let (has_bounced, is_reflectable) = match active_move {
+        Some(m) => (m.has_bounced, m.flags.reflectable),
+        None => return EventResult::Continue,
     };
+    let target_semi_invulnerable = Pokemon::is_semi_invulnerable(battle, target);
 
     if has_bounced || !is_reflectable || target_semi_invulnerable {
         return EventResult::Continue;
-    }
-
-    // const newMove = this.dex.getActiveMove(move.id);
-    // newMove.hasBounced = true;
-    // newMove.pranksterBoosted = false;
-    // move.hasBounced = true; // only bounce once in free-for-all battles
-    // Set has_bounced and pranksterBoosted = false on current active move
-    if let Some(ref active_move) = battle.active_move {
-        active_move.borrow_mut().has_bounced = true;
-        active_move.borrow_mut().prankster_boosted = false;
     }
 
     // this.actions.useMove(newMove, this.effectState.target, { target: source });
@@ -175,20 +149,27 @@ pub fn on_ally_try_hit_side(battle: &mut Battle, target_pos: Option<(usize, usiz
         None => return EventResult::Continue,
     };
 
+    // const newMove = this.dex.getActiveMove(move.id);
+    // newMove.hasBounced = true;
+    // newMove.pranksterBoosted = false;
     // Reflect the move: Rebound holder uses the move against the original source
     let move_data = match battle.dex.moves().get(&move_id).cloned() {
         Some(m) => m,
         None => return EventResult::Continue,
     };
-    crate::battle_actions::use_move(
-        battle,
+    battle.use_move_with_bounced(
         &move_data,
         rebound_holder,  // Rebound holder becomes the user
         Some(source),    // Original source becomes the target
-        None,            // No source effect
-        None,            // Not a Z-move
-        None,            // Not a Max move
+        true,
+        false,
     );
+
+    // move.hasBounced = true; // only bounce once in free-for-all battles
+    // Set on the ORIGINAL move (the event's move instance), after the reflection, as JS does
+    if let Some(source_move) = battle.event.as_ref().and_then(|e| e.source_move.clone()) {
+        source_move.borrow_mut().has_bounced = true;
+    }
 
     // return null;
     EventResult::Null

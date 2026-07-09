@@ -88,22 +88,27 @@ impl Battle {
         has_bounced: bool,
         prankster_boosted: bool,
     ) -> bool {
-        // Set active move flags before using the move
-        if let Some(ref active_move) = self.active_move {
-            if has_bounced {
-                active_move.borrow_mut().has_bounced = true;
-            }
-            active_move.borrow_mut().prankster_boosted = prankster_boosted;
-        }
+        // JS builds a NEW ActiveMove and sets the flags on it; the ORIGINAL move being
+        // bounced is left untouched, so a second Magic Bounce holder hit by the same
+        // spread move can bounce it too.
+        let mut new_move = match self.dex.get_active_move(move_data.id.as_str()) {
+            Some(m) => m,
+            None => return false,
+        };
+        new_move.has_bounced = has_bounced;
+        new_move.prankster_boosted = prankster_boosted;
 
         // Use the move with the new user and target
-        self.use_move(
+        crate::battle_actions::use_move::use_move_full(
+            self,
             move_data,
             new_user_pos,
             new_target_pos,
             None, // sourceEffect is None for reflected moves
             None, // z_move
             None, // max_move
+            false,
+            Some(new_move),
         )
     }
 }

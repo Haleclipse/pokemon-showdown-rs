@@ -182,6 +182,10 @@ pub fn use_move_inner(
     // useMoveInner; null lets getMoveTargets handle it. When true, target was already
     // resolved by getTarget (even if None/null) so we skip the getRandomTarget call.
     target_resolved: bool,
+    // JS callers like Magic Bounce pass a pre-built ActiveMove object (newMove with
+    // hasBounced=true) instead of a move name; when Some, use it as-is instead of
+    // building a fresh ActiveMove from the dex.
+    premade_move: Option<crate::battle_actions::ActiveMove>,
 ) -> bool {
     debug_elog!("[USE_MOVE_INNER] ENTRY: move={}, pokemon=({}, {}), target={:?}, PRNG={}",
         move_data.id.as_str(), pokemon_pos.0, pokemon_pos.1, target_pos, battle.prng.call_count);
@@ -208,12 +212,16 @@ pub fn use_move_inner(
 
     // let move = this.dex.getActiveMove(moveOrMoveName);
     // Since we have MoveData, convert it directly to ActiveMove
-    let mut active_move = match battle.dex.get_active_move(move_data.id.as_str()) {
+    // (JS: if moveOrMoveName is already an ActiveMove object it is used as-is)
+    let mut active_move = match premade_move {
         Some(m) => m,
-        None => {
-            debug_elog!("[USE_MOVE_INNER] Move not found: {}", move_data.id.as_str());
-            return false;
-        }
+        None => match battle.dex.get_active_move(move_data.id.as_str()) {
+            Some(m) => m,
+            None => {
+                debug_elog!("[USE_MOVE_INNER] Move not found: {}", move_data.id.as_str());
+                return false;
+            }
+        },
     };
 
     // Create move effect once for reuse in all run_event/single_event calls

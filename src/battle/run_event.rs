@@ -299,13 +299,64 @@ impl Battle {
         target: Option<crate::event::EventTarget>,
         source: Option<(usize, usize)>,
         source_effect: Option<&Effect>,
+        relay_var: EventResult,
+        on_effect: bool,
+        fast_exit: bool,
+    ) -> EventResult {
+        self.run_event_core(event_id, target, source, source_effect, relay_var, on_effect, fast_exit, None)
+    }
+
+    /// runEvent with an array target, returning the per-target relay vars.
+    /// JavaScript: `return Array.isArray(target) ? targetRelayVars : relayVar;`
+    /// Used by spread-move steps like hitStepTryHitEvent that pass `targets` as an array.
+    pub fn run_event_multi(
+        &mut self,
+        event_id: &str,
+        targets: &[(usize, usize)],
+        source: Option<(usize, usize)>,
+        source_effect: Option<&Effect>,
+        relay_var: EventResult,
+        on_effect: bool,
+        fast_exit: bool,
+    ) -> Vec<EventResult> {
+        let mut target_relay_vars: Vec<EventResult> = Vec::new();
+        self.run_event_core(
+            event_id,
+            Some(crate::event::EventTarget::Pokemons(targets.to_vec())),
+            source,
+            source_effect,
+            relay_var,
+            on_effect,
+            fast_exit,
+            Some(&mut target_relay_vars),
+        );
+        target_relay_vars
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn run_event_core(
+        &mut self,
+        event_id: &str,
+        target: Option<crate::event::EventTarget>,
+        source: Option<(usize, usize)>,
+        source_effect: Option<&Effect>,
         mut relay_var: EventResult,
         on_effect: bool,
         fast_exit: bool,
+        multi_out: Option<&mut Vec<EventResult>>,
     ) -> EventResult {
         // Convert EventTarget to Option<(usize, usize)> for now
         // Later when we support multiple target types, this conversion will change
         let target_pos = target.as_ref().and_then(|t| t.as_pokemon());
+
+        // JS: let targetRelayVars = []; if (Array.isArray(target)) { for (let i...) targetRelayVars[i] = true; }
+        // (the Array.isArray(relayVar) copy branch is unused by current callers)
+        let is_multi = matches!(target, Some(crate::event::EventTarget::Pokemons(_)));
+        let mut target_relay_vars: Vec<EventResult> = if let Some(crate::event::EventTarget::Pokemons(ref positions)) = target {
+            positions.iter().map(|_| EventResult::Boolean(true)).collect()
+        } else {
+            Vec::new()
+        };
 
         // JavaScript: if (this.eventDepth >= 8) { ... }
         // Stack overflow protection
@@ -429,6 +480,19 @@ impl Battle {
         // JavaScript passes defender type as extra parameter: runEvent('Effectiveness', this, type, move, typeMod)
         let preserved_type_param = parent_event.as_ref().and_then(|e| e.type_param.clone());
 
+        // Snapshot the ActiveMove instance the sourceEffect refers to. JS passes the move
+        // OBJECT through the event args, so handlers keep seeing the original move even if
+        // a nested useMove (e.g. Magic Bounce's reflected copy) replaces battle.activeMove
+        // while this event's handlers are still running.
+        let source_move = source_effect
+            .filter(|eff| eff.effect_type == crate::battle::EffectType::Move)
+            .and_then(|eff| {
+                self.active_move
+                    .as_ref()
+                    .filter(|am| am.borrow().id == eff.id)
+                    .cloned()
+            });
+
         // JavaScript: this.event = { id: eventid, target, source, effect: sourceEffect, modifier: 1 };
         // Create new event context
         let event_info = EventInfo {
@@ -439,9 +503,9 @@ impl Battle {
             modifier: 4096, // 4096 = 1.0x in JavaScript
             relay_var: Some(relay_var.clone()),
             type_param: preserved_type_param,
+            source_move,
         };
 
-        self.event = Some(event_info.clone());
         self.event = Some(event_info);
 
         // JavaScript: this.eventDepth++;
@@ -457,6 +521,39 @@ impl Battle {
         // JavaScript: Loop through handlers (lines 174-282)
         // Execute each handler and accumulate results
         for handler in handlers {
+            // JavaScript (array targets):
+            //   if (handler.index !== undefined) {
+            //       if (!targetRelayVars[handler.index] && !(targetRelayVars[handler.index] === 0 &&
+            //           eventid === 'DamagingHit')) continue;
+            //       if (handler.target) { args[hasRelayVar] = handler.target; this.event.target = handler.target; }
+            //       if (hasRelayVar) args[0] = targetRelayVars[handler.index];
+            //   }
+            if is_multi {
+                if let Some(idx) = handler.index {
+                    let trv_falsy = matches!(
+                        target_relay_vars.get(idx),
+                        Some(EventResult::Boolean(false)) | Some(EventResult::Null) | Some(EventResult::Stop)
+                        | Some(EventResult::NotFail) | Some(EventResult::Number(0))
+                    );
+                    let damaging_hit_zero = matches!(target_relay_vars.get(idx), Some(EventResult::Number(0)))
+                        && event_id == "DamagingHit";
+                    if trv_falsy && !damaging_hit_zero {
+                        continue;
+                    }
+                    if let Some(handler_target_pos) = handler.target {
+                        if let Some(ref mut event) = self.event {
+                            event.target = Some(handler_target_pos);
+                        }
+                    }
+                    if _has_relay_var {
+                        relay_var = target_relay_vars[idx].clone();
+                        if let Some(ref mut event) = self.event {
+                            event.relay_var = Some(relay_var.clone());
+                        }
+                    }
+                }
+            }
+
             let effect_id = handler.effect.id.clone();
             let handler_target = handler.effect_holder.clone();
 
@@ -774,7 +871,25 @@ impl Battle {
                     };
 
                     if should_stop || fast_exit {
-                        break;
+                        // JavaScript:
+                        //   if (handler.index !== undefined) {
+                        //       targetRelayVars[handler.index] = relayVar;
+                        //       if (targetRelayVars.every(val => !val)) break;
+                        //   } else { break; }
+                        if is_multi && handler.index.is_some() {
+                            let idx = handler.index.unwrap();
+                            target_relay_vars[idx] = relay_var.clone();
+                            let all_falsy = target_relay_vars.iter().all(|v| matches!(
+                                v,
+                                EventResult::Boolean(false) | EventResult::Null | EventResult::Stop
+                                | EventResult::NotFail | EventResult::Number(0)
+                            ));
+                            if all_falsy {
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
                     }
                 }
             }
@@ -835,6 +950,11 @@ impl Battle {
         // JavaScript: this.event = parentEvent;
         // Restore parent event
         self.event = parent_event;
+
+        // JavaScript: return Array.isArray(target) ? targetRelayVars : relayVar;
+        if let Some(out) = multi_out {
+            *out = target_relay_vars;
+        }
 
         relay_var
     }

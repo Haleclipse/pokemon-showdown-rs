@@ -32,11 +32,9 @@ pub fn hit_step_try_hit_event(
     let move_effect = battle.make_move_effect(&active_move.id);
 
     // const hitResults = this.battle.runEvent('TryHit', targets, pokemon, move);
-    let mut hit_results = Vec::new();
-    for &target_pos in targets {
-        let result = battle.run_event("TryHit", Some(crate::event::EventTarget::Pokemon(target_pos)), Some(attacker_pos), Some(&move_effect), EventResult::Continue, false, false);
-        hit_results.push(result);
-    }
+    // JS passes the targets ARRAY in one runEvent: handlers for all targets are collected
+    // and sorted together, and per-target results come back via targetRelayVars.
+    let hit_results = battle.run_event_multi("TryHit", targets, Some(attacker_pos), Some(&move_effect), EventResult::Continue, false, false);
 
     // if (!hitResults.includes(true) && hitResults.includes(false)) {
     //     this.battle.add('-fail', pokemon);

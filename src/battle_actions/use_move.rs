@@ -45,7 +45,7 @@ pub fn use_move(
     z_move: Option<&str>,
     max_move: Option<&str>,
 ) -> bool {
-    use_move_with_target_resolved(battle, move_data, pokemon_pos, target_pos, source_effect, z_move, max_move, false)
+    use_move_full(battle, move_data, pokemon_pos, target_pos, source_effect, z_move, max_move, false, None)
 }
 
 pub fn use_move_with_target_resolved(
@@ -57,6 +57,23 @@ pub fn use_move_with_target_resolved(
     z_move: Option<&str>,
     max_move: Option<&str>,
     target_resolved: bool,
+) -> bool {
+    use_move_full(battle, move_data, pokemon_pos, target_pos, source_effect, z_move, max_move, target_resolved, None)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn use_move_full(
+    battle: &mut crate::battle::Battle,
+    move_data: &MoveData,
+    pokemon_pos: (usize, usize),
+    target_pos: Option<(usize, usize)>,
+    source_effect: Option<&Effect>,
+    z_move: Option<&str>,
+    max_move: Option<&str>,
+    target_resolved: bool,
+    // Pre-built ActiveMove (JS: useMove(newMove, ...) with a move object) — e.g. Magic
+    // Bounce's newMove with hasBounced=true. None means build from move_data via dex.
+    premade_move: Option<crate::battle_actions::ActiveMove>,
 ) -> bool {
     debug_elog!("[USE_MOVE] ENTRY: move={}, pokemon=({}, {}), turn={}, PRNG={}",
         move_data.id.as_str(), pokemon_pos.0, pokemon_pos.1, battle.turn, battle.prng.call_count);
@@ -78,6 +95,7 @@ pub fn use_move_with_target_resolved(
         z_move,
         max_move,
         target_resolved,
+        premade_move,
     );
     debug_elog!("[USE_MOVE] use_move_inner returned {}, PRNG={}", move_result, battle.prng.call_count);
 

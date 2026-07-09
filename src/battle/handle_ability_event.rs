@@ -67,7 +67,16 @@ impl Battle {
                 .filter(|eff| eff.effect_type == crate::battle::EffectType::Move)
                 .map(|eff| eff.id.clone());
 
-            if let Some(ref move_id) = event_move_id {
+            // The event snapshotted the move INSTANCE it was started with; prefer it so
+            // handlers still see the original move after a nested useMove (e.g. a Magic
+            // Bounce reflection of the same move id) replaced battle.active_move.
+            let event_source_move = self.event.as_ref()
+                .and_then(|e| e.source_move.as_ref())
+                .map(|am| am.borrow().clone());
+
+            if let Some(source_move) = event_source_move {
+                Some(source_move)
+            } else if let Some(ref move_id) = event_move_id {
                 // Check if event's move ID matches battle.active_move
                 let active_move_matches = self.active_move.as_ref()
                     .map(|am| am.borrow().id == *move_id)
