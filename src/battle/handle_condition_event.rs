@@ -270,7 +270,10 @@ impl Battle {
                 let _move_id = self.active_move.as_ref()
                     .map(|m| m.borrow().id.to_string())
                     .unwrap_or_default();
-                condition_callbacks::dispatch_on_drag_out(self, condition_id, pokemon_pos, source_pos, active_move_clone.as_ref())
+                // JavaScript: onDragOut/onAnyDragOut(pokemon) - pokemon is the target of the
+                // DragOut event (the one being dragged out), NOT the effect holder
+                let target_pos = self.event.as_ref().and_then(|e| e.target).unwrap_or(pokemon_pos);
+                condition_callbacks::dispatch_on_drag_out(self, condition_id, target_pos, source_pos, active_move_clone.as_ref())
             }
             "Effectiveness" => {
                 // Effectiveness needs type_mod, target_type, and move_id
