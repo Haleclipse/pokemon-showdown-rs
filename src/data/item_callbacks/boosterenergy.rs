@@ -123,16 +123,16 @@ pub fn on_update(battle: &mut Battle, pokemon_pos: (usize, usize)) -> EventResul
 ///     if (source.baseSpecies.tags.includes("Paradox")) return false;
 ///     return true;
 /// }
-pub fn on_take_item(battle: &mut Battle, _item_pos: Option<(usize, usize)>, _pokemon_pos: (usize, usize), source_pos: Option<(usize, usize)>) -> EventResult {
+pub fn on_take_item(battle: &mut Battle, _item_pos: Option<(usize, usize)>, pokemon_pos: (usize, usize), _source_pos: Option<(usize, usize)>) -> EventResult {
     // if (source.baseSpecies.tags.includes("Paradox")) return false;
-    if let Some(source) = source_pos {
-        if let Some(source_pokemon) = battle.pokemon_at(source.0, source.1) {
-            let source_species = battle.dex.species().get(source_pokemon.base_species.as_str());
-            if let Some(species_data) = source_species {
-                if species_data.tags.contains(&"Paradox".to_string()) {
-                    // return false;
-                    return EventResult::Boolean(false);
-                }
+    // NOTE: JS callback declares (item, source) — only 2 params, so "source" binds to the
+    // event TARGET (args = [relayVar, target, source, effect]), i.e. pokemon_pos here.
+    if let Some(source_pokemon) = battle.pokemon_at(pokemon_pos.0, pokemon_pos.1) {
+        let source_species = battle.dex.species().get(source_pokemon.base_species.as_str());
+        if let Some(species_data) = source_species {
+            if species_data.tags.contains(&"Paradox".to_string()) {
+                // return false;
+                return EventResult::Boolean(false);
             }
         }
     }
